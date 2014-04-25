@@ -7,13 +7,18 @@ using Risk;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Risk.Tests
 {
-    [TestClass()]
+    [TestClass]
     public class AddInsTests
     {
+        static AddInsTests()
+        {
+            Server.WithoutProcessQueue = true;
+        }
+
         private class AddinTest : IAddIn
         {
-            public static double Capital1 = 555;
-            public static double Capital2 = 333;
+            public static decimal Capital1 = 555;
+            public static decimal Capital2 = 333;
 
             public string Name()
             {
@@ -27,8 +32,8 @@ namespace Risk.Tests
 
             public void Start(IServer server)
             {
-                var portfolios = new Portfolio[] { new Portfolio { AccountId = 1, Capital = Capital1 }, new Portfolio { AccountId = 2, Capital = Capital2 } } ;
-                server.Execute(new Command { Type = CommandType.Update, Text = "Portfolios", Data = portfolios });
+                var portfolios = new Portfolio[] { new Portfolio { TradeCode = "1", Capital = Capital1 }, new Portfolio { TradeCode = "2", Capital = Capital2 } } ;
+                server.Execute(Command.Insert("Portfolios", portfolios));
                 Capital1 = 444;
                 Capital2 = 222;
             }
@@ -36,26 +41,32 @@ namespace Risk.Tests
             public void Stop()
             {
             }
+
+
+            public void Execute(Command command)
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        [TestMethod()]
+        [TestMethod]
         public void MainTest()
         {
             var typeName = typeof(AddinTest).FullName + ", " + typeof(AddinTest).Assembly.GetName();
             var server = new Server();
+            server.Register(Server.Portfolios);
             server.AddIns.Register(typeName);
-            server.ProcessCount = 1;
             server.Start();
 
             AddinTest.Capital1 = 444;
             AddinTest.Capital2 = 222;
 
-            var result = (new Command { Type = CommandType.Select, Text = "Portfolios" }).Execute <IEnumerable <Portfolio>>().ToList();
+            var result = ((IEnumerable<Portfolio>)server.Execute(Command.Select("Portfolios"))).ToList();
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual(1, result[0].AccountId);
+            Assert.AreEqual("1", result[0].TradeCode);
             Assert.AreEqual(555, result[0].Capital);
-            Assert.AreEqual(2, result[1].AccountId);
+            Assert.AreEqual("2", result[1].TradeCode);
             Assert.AreEqual(333, result[1].Capital);
 
             server.AddIns.Stop(typeName);
@@ -64,12 +75,12 @@ namespace Risk.Tests
 
             server.AddIns.Start(typeName);
 
-            result = (new Command { Type = CommandType.Select, Text = "Portfolios" }).Execute<IEnumerable<Portfolio>>().ToList();
+            ((IEnumerable<Portfolio>)server.Execute(Command.Select("Portfolios"))).ToList();
 
             Assert.AreEqual(2, result.Count);
-            Assert.AreEqual(1, result[0].AccountId);
+            Assert.AreEqual("1", result[0].TradeCode);
             Assert.AreEqual(555, result[0].Capital);
-            Assert.AreEqual(2, result[1].AccountId);
+            Assert.AreEqual("2", result[1].TradeCode);
             Assert.AreEqual(333, result[1].Capital);
 
             server.Stop();

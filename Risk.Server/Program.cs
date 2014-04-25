@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.ServiceProcess;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using System.Windows.Forms;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
-using System.Windows.Forms;
 
 namespace Risk
 {
@@ -45,7 +42,7 @@ namespace Risk
             return defaultValue;
         }
 
-        private static void AddLogConsole()
+        public static void AddLogConsole()
         {
             if (LogManager.Configuration == null)
                 LogManager.Configuration = new LoggingConfiguration();
@@ -125,6 +122,8 @@ namespace Risk
 
                     log.Info("Start console {0}", ServiceDisplayName);
                     Server server = new Server();
+                    if (ArgExists(args, "-safe"))
+                        server.SafeMode = true;
                     server.Configure();
                     server.Start();
 

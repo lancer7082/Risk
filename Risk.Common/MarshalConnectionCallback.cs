@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Risk
 {
+    /// <summary>
+    /// Маршаллинг контракта на произвольный класс
+    /// </summary>
     public class MarshalConnectionCallback : IConnectionCallback
     {
         private Type instanceType;
@@ -35,9 +36,9 @@ namespace Risk
             }
         }
 
-        public void ReceiveMessage(string message)
+        public void ReceiveMessage(string message, MessageType messageType)
         {
-            MarshalInvoke(MethodInfo.GetCurrentMethod(), message);
+            MarshalInvoke(MethodInfo.GetCurrentMethod(), message, messageType);
         }
 
         public void ReceiveCommand(Command command)

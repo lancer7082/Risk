@@ -6,8 +6,8 @@
     <ProjectGuid>{FD86997C-CE3B-4F6A-9050-B9EA5B2ACD89}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Risk.Server.Tests</RootNamespace>
-    <AssemblyName>Risk.Server.Tests</AssemblyName>
+    <RootNamespace>Risk.Tests</RootNamespace>
+    <AssemblyName>Risk.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -36,7 +36,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.XML" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml.Serialization" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -54,6 +59,8 @@
     <Compile Include="AddInsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerTests.cs" />
+    <Compile Include="TableGroupViewTests.cs" />
+    <Compile Include="TableTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Risk.Common\Risk.Common.csproj">
@@ -61,7 +68,7 @@
       <Name>Risk.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\Risk.Server\Risk.Server.csproj">
-      <Project>{C1E95681-7734-461D-B012-DDB91BB2DB05}</Project>
+      <Project>{c1e95681-7734-461d-b012-ddb91bb2db05}</Project>
       <Name>Risk.Server</Name>
     </ProjectReference>
   </ItemGroup>

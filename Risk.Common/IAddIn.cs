@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Risk
 {
+    /// <summary>
+    /// Расширение приложения
+    /// </summary>
     public interface IAddIn
     {
         // TODO: !!! void Configure(Configuration)
@@ -13,5 +12,6 @@ namespace Risk
         string Version();
         void Start(IServer server);
         void Stop();
+        void Execute(Command command);
     }
 }

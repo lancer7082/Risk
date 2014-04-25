@@ -12,7 +12,8 @@ namespace Risk
         Create = 1,
         Update = 2,
         Delete = 3,
-        Subscribe = 4,
-        Unsubscribe = 5
+        Synchronize = 4,
+        Subscribe = 100,
+        Unsubscribe = 101
     }
 }

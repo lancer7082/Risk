@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Risk
 {
+    /// <summary>
+    /// Сделка
+    /// </summary>
     [Serializable]
-    public class Trade
+    public class Trade : ICloneable
     {
         /// <summary>
         /// Id счета
@@ -22,9 +21,12 @@ namespace Risk
         /// <summary>
         /// Код инструмента
         /// </summary>
-        public string Seccode { get; set; }
+        public string SecCode { get; set; }
 
-        public string TradeType { get; set; }
+        /// <summary>
+        /// Тип сделки (Buy | Sell)
+        /// </summary>
+         public string TradeType { get; set; }
         public DateTime TradeTime { get; set; }
         public bool Sell { get; set; }
 
@@ -33,7 +35,35 @@ namespace Risk
         public double Price { get; set; }
         public double Yield { get; set; }
         public long Quantity { get; set; }
-        public double Value { get; set; }
-        public double Comission { get; set; }
+        public decimal Value { get; set; }
+        public double Commission { get; set; }
+
+        /// <summary>
+        /// Рассчитанная сумма
+        /// </summary>
+        public decimal ValueCalc { get; set; }
+
+        public object Clone()
+        {
+            return new Trade
+            {
+                AccountId = this.AccountId,
+                TradeCode = this.TradeCode,
+                SecCode = this.SecCode,
+                TradeType = this.TradeType,
+                TradeTime = this.TradeTime,
+                Sell = this.Sell,
+
+                TradeNo = this.TradeNo,
+                OrderNo = this.OrderNo,
+                Price = this.Price,
+                Yield = this.Yield,
+                Quantity = this.Quantity,
+                Value = this.Value,
+                Commission = this.Commission,
+
+                ValueCalc = this.ValueCalc,
+            };
+        }
     }
 }

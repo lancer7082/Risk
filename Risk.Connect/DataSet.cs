@@ -3,135 +3,187 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 
 namespace Risk
 {
-    public class DataSet : IDataSet, IDisposable
+    /// <summary>
+    /// Набор данных (аля TDataSet в Delphi)
+    /// </summary>
+    public class DataSet : IExportDataSet, IDisposable
     {
         private Dictionary<string, PropertyInfo> fields = new Dictionary<string, PropertyInfo>(StringComparer.InvariantCultureIgnoreCase);
         private IEnumerator enumerator;
         private bool _eof;
-        private ReceiveEvent receiveEvent;
+        private ReceiveCommand receiveEvent;
         private int instanceId;
-        private object _data;
 
         public Connection Connection { get; private set; }
-        public string CorrelationId { get; private set; }
-        public bool Active { get; internal set; }
-        public int Command { get; set; } // CommandType
-        public string Text { get; set; }
-        public bool Notification { get; set; }
+        public Command Command { get; private set; }
         
+        public string CorrelationId
+        {
+            get { return Command.CorrelationId; }
+        }
+
+        public string Text
+        {
+            get { return Command.Text; }
+        }
+
+        public bool Active { get; internal set; }
+        public bool Notification { get; set; }
+
         public DataSet(Connection connection, int instanceId)
         {
             this.Connection = connection;
             this.instanceId = instanceId;
+            Command = new Command();
         }
 
         public DataSet(Connection connection, int instanceId, Command command)
         {
             this.Connection = connection;
             this.instanceId = instanceId;
-            this.CorrelationId = command.CorrelationId;
-            this.Data = command.Data;
-            this.Text = command.Text;
-            this.Command = (int)command.Type;
+            Command = command;
+            UpdateData(Command.Data);
         }
 
         public void Dispose()
         {
-            Data = null;
             if (Active)
                 Connection.CloseCommand(this);
             // TODO: ??? Thread.MemoryBarrier();
         }
 
+        private object _data;
+
+        private void UpdateData(object data)
+        {
+            this._data = data;
+
+            // TODO: ??? Кешировать разбор полей для типа
+            fields.Clear();
+
+            First();
+
+            if (data == null || data.GetType().IsValueType || data is string)
+                return;
+
+            Type dataType = null; // TODO: !!! Get from command
+
+            if (dataType == null)
+            {
+                dataType = data.GetType();
+                if (data is IEnumerable)
+                {
+                    var ienum = dataType.GetInterface(typeof(IEnumerable<>).Name);
+                    if (ienum != null)
+                        dataType = ienum.GetGenericArguments()[0];
+                }
+            }
+
+            foreach (var propInfo in from f in dataType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                                     where f.PropertyType.IsValueType || f.PropertyType == typeof(string)
+                                     select f)
+            {
+                fields.Add(propInfo.Name, propInfo);
+            }
+        }
+
         public void NewCorrelationId()
         {
-            this.CorrelationId = Guid.NewGuid().ToString();
+            Command.CorrelationId = Guid.NewGuid().ToString();
         }
 
         public int GetCommand()
         {
-            return Command;
+            return (int)(Command.Action == ActionType.Subscribe ? ActionType.Select : Command.Action);
         }
 
         public void SetCommand(int command)
         {
-            this.Command = command;
+            var aType = (ActionType)command;
+            Command.Action = aType == ActionType.Select && Notification ? ActionType.Subscribe : aType;
         }
 
         public string GetText()
         {
-            return Text;
+            return Command.Text;
         }
 
         public void SetText(string text)
         {
-            this.Text = text;
+            Command.Text = text;
         }
 
-        public byte GetNotification()
+        public int GetParamCount()
         {
-            return Notification ? (byte)1 : (byte)0;
+            return Command.Params.Count;
         }
 
-        public void SetNotification(byte notification)
+        public string GetParamName(int index)
         {
-            if (Active && notification == 1)
+            return Command.Params.GetParameter(index).Name;
+        }
+
+        public object GetParam(string name)
+        {
+            return Command.Params[name];
+        }
+
+        public void SetParam(string name, object value)
+        {
+            Command.Params[name] = value;
+        }
+
+        public string GetFilter()
+        {
+            return Command.Filter;
+        }
+
+        public void SetFilter(string filter)
+        {
+            if ((Command.Filter ?? "") != (filter ?? ""))
+            {
+                Command.Filter = filter.Replace('\'', '"'); // TODO: !!! Change quoted symbol
+                if (Active)
+                    Connection.OpenCommand(this);
+            }
+        }
+
+        public bool GetNotification()
+        {
+            return Notification;
+        }
+
+        public void SetNotification(bool notification)
+        {
+            if (Active && notification)
                 throw new Exception("Can not change notification on active command");
-            this.Notification = notification == 1;
+            this.Notification = notification;
+            if (Command.Action == ActionType.Select && notification)
+                Command.Action = ActionType.Subscribe;
+            else if (Command.Action == ActionType.Subscribe && !notification)
+                Command.Action = ActionType.Select;
         }
 
         public object Data
         {
             get 
             {
-                return enumerator == null ? _data : enumerator.Current; 
-            }
-
-            set 
-            {
-                // TODO: ??? Кешировать разбор полей для типа
-                _data = value;
-                fields.Clear();
-
-                First();
-
-                if (_data == null || _data.GetType().IsValueType || _data is string)
-                    return;
-
-                Type dataType = null; // TODO: !!! Get from command
-
-                if (dataType == null)
-                {
-                    dataType = _data.GetType();
-                    if (_data is IEnumerable)
-                    {
-                        var ienum = dataType.GetInterface(typeof(IEnumerable<>).Name);
-                        if (ienum != null)
-                            dataType = ienum.GetGenericArguments()[0];
-                    }
-                }
-
-                foreach (var propInfo in from f in dataType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                                         where f.PropertyType.IsValueType || f.PropertyType == typeof(string)
-                                         select f)
-                {
-                    fields.Add(propInfo.Name, propInfo);
-                }
+                return enumerator == null ? _data : enumerator.Current;
             }
         }
 
-        public void ReceiveCommand(DataSet command)
+        public void ReceiveCommand(DataSet dataSet)
         {
+            UpdateData(dataSet.Command.Data);
+
             if (Active && receiveEvent != null)
                 try
                 {
-                    receiveEvent(instanceId, command);
+                    receiveEvent(instanceId, this);
                 }
                 catch
                 {
@@ -139,7 +191,7 @@ namespace Risk
                 }
         }
 
-        public void OnReceive(ReceiveEvent receiveEvent)
+        public void OnReceive(ReceiveCommand receiveEvent)
         {
             this.receiveEvent += receiveEvent;
         }
@@ -201,17 +253,25 @@ namespace Risk
 
         public string GetFieldNames()
         {
-            if (_data == null)
-                return "";
+            //if (_data == null || _command.Fields.Count() > 0)
+            //    return _command.Fields.ToString(); // TODO: !!!
 
             StringBuilder sb = new StringBuilder();
-            foreach (var fieldName in fields.Keys)
+            foreach (var fieldName in Command.Fields ?? fields.Keys.ToArray())
             {
                 if (sb.Length != 0)
                     sb.Append(";");
                 sb.Append(fieldName);
             }
             return sb.ToString();
+        }
+
+        public void SetFieldNames(string fieldNames)
+        {
+            if (String.IsNullOrEmpty(fieldNames))
+                Command.Fields = null;
+            else
+                Command.Fields = fieldNames.Split(',');
         }
 
         public int GetFieldType(string fieldName)
@@ -233,7 +293,7 @@ namespace Risk
                 case TypeCode.Boolean: return 11; // varBoolean
                 case TypeCode.Double: return 5;   // varDouble
                 case TypeCode.String: return 256; // varString
-                // case TypeCode.Int64: return 20;   // varInt64
+                case TypeCode.Int64: return 20;   // varInt64
 
                 // TODO: ???
                 case TypeCode.Decimal: return 5;   // varDouble

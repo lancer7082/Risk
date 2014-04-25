@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Dynamic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceModel;
@@ -10,11 +12,34 @@ using System.Threading;
 
 namespace Risk
 {
-    public class Connection : IExport
+    /// <summary>
+    /// Подключение к серверу
+    /// </summary>
+    public class Connection : IExportConnection
     {
+        private ConnectionState _state = ConnectionState.Closed;
+        private DisconnectEvent disconnectEvent;
+        private ConnectStateEvent connectStateEvent;
+        private CommandEvent commandEvent;
+        private MessageEvent messageEvent;
+        private int instanceId;
+        private IConnection connection;
+        private DuplexChannelFactory<IConnection> factory;
+        private string connectionString;
+        private bool faultTolerant = true;
+        private bool isTrace = false;
+        public static Timer reconnectTimer;
+
+        private string _serverName;
+        private string _version;
+        private string _userName;
+
+        public string ConnectionId { get; private set; }
+        public readonly static List<ExportDataSet> ActiveDataSets = new List<ExportDataSet>();
+
         [ExportDll]
         [return: MarshalAs(UnmanagedType.LPWStr)]
-        public static string CreateClient(int instatnceId, [MarshalAs(UnmanagedType.Interface)]out IExport result)
+        public static string CreateClient(int instatnceId, [MarshalAs(UnmanagedType.Interface)]out IExportConnection result)
         {
             result = null;
             try
@@ -39,10 +64,9 @@ namespace Risk
                 fiSystem.SetValue(null, null);
             }
         }
-
-        private ConnectionState _state = ConnectionState.Closed;
+        
         public ConnectionState State 
-        { 
+        {
             get
             {
                 return _state;
@@ -58,14 +82,7 @@ namespace Risk
                 }
             }
         }
-        
-        private DisconnectEvent disconnectEvent;
-        private ConnectStateEvent connectStateEvent;
-        private ReceiveEvent receiveEvent;
-        private MessageEvent messageEvent;
-        private int instanceId;
-        private List<DataSet> commands = new List<DataSet>();
-
+       
         public Connection(int instatnceId)
         {
             this.instanceId = instatnceId;
@@ -76,7 +93,6 @@ namespace Risk
                     throw (Exception)e.ExceptionObject;
                 };
             // Environment.CurrentDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-
 
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
@@ -106,14 +122,6 @@ namespace Risk
             Disconnect();
         }
 
-        public string Id { get; private set; }
-
-        private IConnection connection;
-        private DuplexChannelFactory<IConnection> factory;
-        private string connectionString;
-        private bool faultTolerant = true;
-        public static Timer reconnectTimer;
-
         #region Connection
 
         public void Connect(string connectionString)
@@ -133,14 +141,20 @@ namespace Risk
 
             var csBuilder = new ConnectionStringBuilder(connectionString);
             faultTolerant = csBuilder.FaultTolerant;
+            isTrace = csBuilder.Trace;
             var server = new Uri(csBuilder.Uri, "Risk");
             EndpointAddress endpoint = new EndpointAddress(server);
 
             var channel = factory.CreateChannel(endpoint);
+
             ((ICommunicationObject)channel).Faulted += (s, e) => TryReconnect(s);
             try
             {
-                Id = channel.Connect(csBuilder.UserID, csBuilder.Password, Id);
+                var serverConnectionInfo = channel.Connect(csBuilder.UserID, csBuilder.Password, csBuilder.Options);
+                ConnectionId = serverConnectionInfo.ConnectionId;
+                _serverName = serverConnectionInfo.ServerName;
+                _version = serverConnectionInfo.ServerVersion;
+                _userName = serverConnectionInfo.UserName;
             }
             catch (EndpointNotFoundException)
             {
@@ -152,12 +166,11 @@ namespace Risk
             }
 
             connection = channel;
-
             State = ConnectionState.Active;
 
-            foreach (var command in commands)
+            foreach (var command in ActiveDataSets)
             {
-                OpenCommand(command);
+                command.Open();
             }
         }
 
@@ -182,6 +195,7 @@ namespace Risk
             {
                 factory = null;
             }
+
             State = ConnectionState.Closed;
         }
 
@@ -238,92 +252,68 @@ namespace Risk
                 throw new Exception("Not connected");
         }
 
-        #endregion
-
-        public object Execute(Command command)
+        public string ServerName()
         {
-            CheckConnection();
-            return connection.Execute(command);
+            return  _serverName;
         }
 
-        public T Execute<T>(Command command)
+        public string UserName()
         {
-            return (T)Execute(command);
+            return _userName;
         }
 
         public string Version()
         {
-            return Execute<string>(new Command { Type = CommandType.Select, Text = "@@Version" });
+            return _version;
         }
 
-        public void SendMessage(string message)
+        #endregion
+
+        public void Trace(string message, params object[] args)
         {
-            // TODO: ??? connection.SendMessage(message);
+            if (isTrace)
+                ReceiveMessage(String.Format("{1:HH:mm:ss.fff} : {0}", String.Format(message, args), DateTime.Now), MessageType.Trace);
         }
 
-        public void ReceiveMessage(string message)
+        public void Execute(Command command)
         {
-            if (messageEvent != null)
-                messageEvent(instanceId, message);
-        }
-
-        public void ReceiveCommand(Command command)
-        {
-            var dataSet = new DataSet(this, instanceId, command);
-            var sourceCommand = commands.FirstOrDefault(c => c.CorrelationId == command.CorrelationId);
-            if (sourceCommand != null)
-                sourceCommand.ReceiveCommand(dataSet);
-            else if (receiveEvent != null &&  (String.IsNullOrEmpty(command.CorrelationId) || command.CorrelationId == Id)) // Command correlationId for connection must be with connection Id
-                receiveEvent(instanceId, dataSet);
-        }
-
-        public IDataSet CreateCommand(int instanceId)
-        {
-            return new DataSet(this, instanceId);
-        }
-
-        public void OpenCommand(IDataSet command)
-        {
-            var commandInstance = command as DataSet;
-            if (commandInstance == null)
-                throw new Exception("Command not initialized");
-
-            commandInstance.NewCorrelationId();  // For ignore old notification
-            
-            if (!commands.Contains(commandInstance))
-                commands.Add(commandInstance);
-
-            commandInstance.Active = true;
             try
             {
-                if (commandInstance.Notification)
-                    Execute(new Command { Type = CommandType.Subscribe, Text = commandInstance.Text, CorrelationId = commandInstance.CorrelationId });
-                else
-                    Execute(new Command { Type = CommandType.Select, Text = commandInstance.Text, CorrelationId = commandInstance.CorrelationId });
+                Trace("Send command '{0}' to server", command);
+                CheckConnection();
+                CommandResult data = connection.Execute(command);
+                command.Data = data.Data;
+                Trace("Receive command '{0}' result from server", command);
             }
             catch (Exception ex)
             {
-                commands.Remove(commandInstance);
                 throw ex;
             }
         }
 
-        public void CloseCommand(IDataSet command)
+        public void ReceiveCommand(Command command)
         {
-            var commandInstance = command as DataSet;
-            if (commandInstance == null)
-                throw new Exception("Command not initialized");
+            var sourceCommand = ActiveDataSets.FirstOrDefault(c => c.CorrelationId == command.CorrelationId);
+            if (sourceCommand != null)
+                sourceCommand.ReceiveCommand(command);
+            else if (commandEvent != null &&  (String.IsNullOrEmpty(command.CorrelationId) || command.CorrelationId == ConnectionId)) // Command correlationId for connection must be with connection Id
+                commandEvent(instanceId, new ExportCommand(this, command, -1));
+        }
 
-            commandInstance.Active = false;
+        public void ReceiveMessage(string message, MessageType messageType)
+        {
+            if (messageEvent != null)
+                messageEvent(instanceId, message, (int)messageType);
+        }
 
-            if (commands.Contains(commandInstance))
-            {
-                commands.Remove(commandInstance);
-                if (connection != null && commandInstance.Notification)
-                    Execute(new Command { Type = CommandType.Unsubscribe, Text = commandInstance.Text, CorrelationId = commandInstance.CorrelationId });
-            }
+        public IExportCommand CreateCommand(int instanceId)
+        {
+            return new ExportCommand(this, new Command(), instanceId);
+        }
 
-            commandInstance.Dispose();
+        public IExportDataSet CreateDataSet(int instanceId)
+        {
+            return new ExportDataSet(this, instanceId);
         }
 
         public void OnDisconnect(DisconnectEvent disconnectEvent)
@@ -341,37 +331,9 @@ namespace Risk
             this.messageEvent += messageEvent;
         }
 
-        public void OnReceive(ReceiveEvent receiveEvent)
+        public void OnCommand(CommandEvent commandEvent)
         {
-            this.receiveEvent += receiveEvent;
+            this.commandEvent += commandEvent;
         }
-    }
-
-    public delegate void DisconnectEvent(int instatnceId);
-    public delegate void ConnectStateEvent(int instatnceId, int state);
-    public delegate void ReceiveEvent(int instatnceId, IDataSet command);
-    public delegate void MessageEvent(int instatnceId, [MarshalAs(UnmanagedType.LPWStr)]string message);
-
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IExport
-    {
-        [return: MarshalAs(UnmanagedType.LPWStr)]
-        string Version();
-
-        void Connect([MarshalAs(UnmanagedType.LPWStr)]string connectionString);
-        void Disconnect();
-        void OnDisconnect([MarshalAs(UnmanagedType.FunctionPtr)]DisconnectEvent disconnectEvent);
-        void OnStateChanged([MarshalAs(UnmanagedType.FunctionPtr)]ConnectStateEvent connectStateEvent);
-
-        void SendMessage([MarshalAs(UnmanagedType.LPWStr)]string message);
-        void OnMessage([MarshalAs(UnmanagedType.FunctionPtr)]MessageEvent messageEvent);
-
-        [return: MarshalAs(UnmanagedType.Interface)]
-        IDataSet CreateCommand(int instanceId);
-
-        void OpenCommand([MarshalAs(UnmanagedType.Interface)]IDataSet Command);
-        void CloseCommand([MarshalAs(UnmanagedType.Interface)]IDataSet Command);
-
-        void OnReceive([MarshalAs(UnmanagedType.FunctionPtr)]ReceiveEvent receiveEvent);
     }
 }

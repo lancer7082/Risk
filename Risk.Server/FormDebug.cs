@@ -35,17 +35,12 @@ namespace Risk
 
         private void button1_Click(object sender, EventArgs e)
         {
-            // TODO: ???? 
+            new CommandMessage { MessageType = MessageType.Info, Message = textBox1.Text }.ExecuteAsync();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            // TODO: ???
-        }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            // TODO: ???
+            new CommandSendMail { From = "<Risk (Test)> <noreply@corp.finam.ru>", To = "turyansky@corp.finam.ru", Subject = "Тест", Body = "Тестовое сообщение" }.ExecuteAsync();
         }
     }
 }

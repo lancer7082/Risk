@@ -21,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,30 +54,54 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Addins.cs" />
-    <Compile Include="AssemblyHelpers.cs" />
-    <Compile Include="CommandClient.cs" />
-    <Compile Include="CommandHelper.cs" />
-    <Compile Include="CommandMessage.cs" />
-    <Compile Include="CommandTimer.cs" />
-    <Compile Include="ConnectionWCF.cs" />
-    <Compile Include="Connection.cs" />
+    <Compile Include="Commands\CommandClosePositionsByAccount.cs" />
+    <Compile Include="Core\Commands\CommandMail.cs" />
+    <Compile Include="Core\Commands\CommandServerObjects.cs" />
+    <Compile Include="Core\AddIns.cs" />
+    <Compile Include="Core\Commands\CommandAttribute.cs" />
+    <Compile Include="Core\Commands\CommandDataObject.cs" />
+    <Compile Include="Core\Commands\CommandDelete.cs" />
+    <Compile Include="Core\Commands\CommandInsert.cs" />
+    <Compile Include="Core\Commands\CommandMerge.cs" />
+    <Compile Include="Commands\CommandNotifyClientTransaq.cs" />
+    <Compile Include="Core\Commands\CommandSelect.cs" />
+    <Compile Include="Core\Commands\CommandSubscribe.cs" />
+    <Compile Include="Core\Commands\CommandTable.cs" />
+    <Compile Include="Core\Commands\CommandUnsubscribe.cs" />
+    <Compile Include="Core\Commands\CommandUpdate.cs" />
+    <Compile Include="Commands\CommandNewOrder.cs" />
+    <Compile Include="Core\IDataObject.cs" />
+    <Compile Include="Core\ITable.cs" />
+    <Compile Include="Core\NotificationData.cs" />
+    <Compile Include="Core\NotificationType.cs" />
+    <Compile Include="Core\TableResult.cs" />
+    <Compile Include="Tables\RiskSettingsView.cs" />
+    <Compile Include="Core\Utils\LinqDynamic.cs" />
+    <Compile Include="Core\Utils\AssemblyHelpers.cs" />
+    <Compile Include="Core\Commands\CommandMessage.cs" />
+    <Compile Include="Core\ConnectionWCF.cs" />
+    <Compile Include="Core\Connection.cs" />
     <Compile Include="DataBase.cs" />
-    <Compile Include="DataObject.cs" />
+    <Compile Include="Core\DataObjectAttribute.cs" />
+    <Compile Include="Core\Utils\EnumerableHelpers.cs" />
+    <Compile Include="Core\Utils\ExpressionsRoutines.cs" />
     <Compile Include="FormDebug.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FormDebug.Designer.cs">
       <DependentUpon>FormDebug.cs</DependentUpon>
     </Compile>
-    <Compile Include="MoneyInOut.cs" />
-    <Compile Include="Notification.cs" />
+    <Compile Include="Models\MoneyInOut.cs" />
+    <Compile Include="Models\SessionInitialData.cs" />
+    <Compile Include="Core\Notification.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />
-    <Compile Include="CommandServer.cs" />
+    <Compile Include="Core\Commands\CommandServer.cs" />
+    <Compile Include="Core\ServerBase.cs" />
     <Compile Include="Service.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -85,7 +109,25 @@
       <DependentUpon>Service.cs</DependentUpon>
     </Compile>
     <Compile Include="ServiceInstaller.cs" />
-    <Compile Include="CommandConnect.cs" />
+    <Compile Include="Core\DataObjectBase.cs" />
+    <Compile Include="Core\Table.cs" />
+    <Compile Include="Core\TableAttribute.cs" />
+    <Compile Include="Tables\Alerts.cs" />
+    <Compile Include="Tables\Clients.cs" />
+    <Compile Include="Core\Connections.cs" />
+    <Compile Include="Tables\ExchangeRates.cs" />
+    <Compile Include="Tables\Instruments.cs" />
+    <Compile Include="Tables\Orders.cs" />
+    <Compile Include="Tables\Portfolios.cs" />
+    <Compile Include="Tables\Positions.cs" />
+    <Compile Include="Tables\PositionsInstruments.cs" />
+    <Compile Include="Tables\PortfolioRules.cs" />
+    <Compile Include="Tables\Trades.cs" />
+    <Compile Include="Core\TriggerCollection.cs" />
+    <Compile Include="Core\TriggerPair.cs" />
+    <Compile Include="Core\Utils\ObjectHelpers.cs" />
+    <Compile Include="Core\Utils\StringHelpers.cs" />
+    <Compile Include="Core\DataObjectView.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -101,6 +143,7 @@
       <Name>Risk.Common</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

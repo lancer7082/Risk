@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Risk
 {
-    public class Client : IExtensibleDataObject // TODO: ??? INotifyPropertyChanged
+    /// <summary>
+    /// Клиент
+    /// </summary>
+    public class Client : ICloneable // TODO: ??? INotifyPropertyChanged
     {
         public int Id { get; set; }
 
@@ -17,21 +16,21 @@ namespace Risk
 
         public string Test { get; set; }
 
-        public TimeSpan TimeUpdate { get; set; }
+        public TimeSpan UpdateTime { get; set; }
 
         public bool Updated { get; set; } // TODO: ??? Переделать на поле-маску для определения изменившихся полей
 
-        private ExtensionDataObject extensionDataObjectValue;
-        public ExtensionDataObject ExtensionData
+        public object Clone()
         {
-            get
+            return new Client
             {
-                return extensionDataObjectValue;
-            }
-            set
-            {
-                extensionDataObjectValue = value;
-            }
+                Id = this.Id,
+                Name = this.Name,
+                Balance = this.Balance,
+                Test = this.Test,
+                UpdateTime = this.UpdateTime,
+                Updated = this.Updated,
+            };
         }
     }
 }

@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Risk
 {
+    /// <summary>
+    /// Установка сервиса
+    /// </summary>
     public class ServerServiceInstaller
     {
         public string GetServiceName(String ServiceName, String InstanceName)
