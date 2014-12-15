@@ -12,6 +12,7 @@ namespace Risk
         Type ObjectType { get; }
         int RefreshTime { get; set; }
 
+        FieldInfo[] GetFields(ParameterCollection parameters);       
         object GetData(ParameterCollection parameters);
         void SetData(ParameterCollection parameters, object data);
         object CreateDataFromParams(ParameterCollection parameters, bool updateFields);

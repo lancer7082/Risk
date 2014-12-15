@@ -54,15 +54,38 @@ namespace Risk
         /// Ставка ГО клиента для инструмента, .00 %%
         /// m_dGORate
         /// </summary>
-        public decimal GORate { get; set; }
-        
+        public decimal GORate
+        {
+            //•	Ставка ГО Long Клиента для Инструмента – для расчета размера положительной позиции к закрытию;
+            //•	Ставка ГО Short Клиента для Инструмента - для расчета размера отрицательной позиции к закрытию;
+            get
+            {
+                return Balance > 0 ? GORateLong : GORateShort;
+            }
+        }
+
+        /// <summary>
+        /// Ставка ГО клиента для инструмента, .00 %%
+        /// m_dGORate
+        /// </summary>
+        public decimal GORateLong { get; set; }
+
+        /// <summary>
+        /// Ставка ГО клиента для инструмента, .00 %%
+        /// m_dGORate
+        /// </summary>
+        public decimal GORateShort { get; set; }
+
         /// <summary>
         /// ГО позиции
         /// m_dGOPos
         /// </summary>
         public decimal GOPos { get; set; }
 
-        #region  Рассчитываемые значения
+        /// <summary>
+        /// Ставка ГО по инструменту
+        /// </summary>
+        public decimal InstrumentGORate { get; set; }
 
         /// <summary>
         /// Сделки – количество сделок по инструменту в текущей торговой сессии
@@ -76,7 +99,7 @@ namespace Risk
         public decimal Turnover { get; set; }
 
         /// <summary>
-        /// Торговый оборот в USD – торговый оборот в USD в текущей торговой сессии на основании совершенных сделок по инструменту
+        /// Торговый оборот в валюте расчетов
         /// <remarks>Правила расчета см. в ФТ 2</remarks>
         /// </summary>
         public decimal TurnoverCurrencyCalc { get; set; }
@@ -86,33 +109,110 @@ namespace Risk
         /// </summary>
         public decimal TurnoverQuantity { get; set; }
 
-        #endregion
-
         /// <summary>
         /// Если true - Счет центрального контрагента
         /// </summary>
         public bool Contragent { get; set; }
 
+        /// <summary>
+        /// Входящее сальдо, шт.
+        /// </summary>
+        public int OpenBalance { get; set; }
+
+        /// <summary>
+        /// P\L в валюте расчетов
+        /// </summary>
+        public decimal PLCurrencyCalc { get; set; }
+
+        /// <summary>
+        /// итоговый результат на начало сессии
+        /// </summary>
+        public decimal FinRes { get; set; }
+
+        /// <summary>
+        /// Название инструмента
+        /// </summary>
+        public string InstrumentName { get; set; }
+
+        /// <summary>
+        /// Код класса инструмента
+        /// </summary>
+        public string InstrumentClassCode { get; set; }
+
+        /// <summary>
+        /// Имя класса инструмента
+        /// </summary>
+        public string InstrumentClassName { get; set; }
+
+        /// <summary>
+        /// Торговый оборот в валюте отображения
+        /// <remarks>Правила расчета см. в ФТ 2</remarks>
+        /// </summary>
+        public decimal TurnoverCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// P\L в валюте отображения
+        /// </summary>
+        public decimal PLCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// итоговый результат в валюте отображения
+        /// </summary>
+        public decimal FinResCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// Котировка инструмента в валюте портфеля
+        /// </summary>
+        public decimal Quote { get; set; }
+
+        /// <summary>
+        /// Кросс курс инстурмента к валюте портфеля
+        /// </summary>
+        public decimal CrossRate { get; set; }
+
+        /// <summary>
+        /// Cтоимость позиции в валюте портфеля
+        /// </summary>
+        public decimal PositionCost { get; set; }
+
+        /// <summary>
+        /// ICloneable
+        /// </summary>
+        /// <returns></returns>
         public object Clone()
         {
             return new Position
             {
-                AccountId = this.AccountId,
-                TradeCode = this.TradeCode,
-                SecurityCurrency = this.SecurityCurrency,
-                SecCode = this.SecCode,
-                Bought = this.Bought,
-                Sold = this.Sold,
-                Balance = this.Balance,
-                PL = this.PL,
-                GORate = this.GORate,
-                GOPos = this.GOPos,
-                Contragent = this.Contragent,
+                AccountId = AccountId,
+                TradeCode = TradeCode,
+                SecurityCurrency = SecurityCurrency,
+                SecCode = SecCode,
+                OpenBalance = OpenBalance,
+                Bought = Bought,
+                Sold = Sold,
+                Balance = Balance,
+                PL = PL,
+                PLCurrencyCalc = PLCurrencyCalc,
+                GOPos = GOPos,
+                Contragent = Contragent,
                 // Из сделок
-                DealsCount = this.DealsCount,
-                Turnover = this.Turnover,
-                TurnoverCurrencyCalc = this.TurnoverCurrencyCalc,
-                TurnoverQuantity = this.TurnoverQuantity,
+                DealsCount = DealsCount,
+                Turnover = Turnover,
+                TurnoverCurrencyCalc = TurnoverCurrencyCalc,
+                TurnoverQuantity = TurnoverQuantity,
+                FinRes = FinRes,
+                InstrumentClassName = InstrumentClassName,
+                InstrumentClassCode = InstrumentClassCode,
+                InstrumentName = InstrumentName,
+                PLCurrencyDisplay = PLCurrencyDisplay,
+                TurnoverCurrencyDisplay = TurnoverCurrencyDisplay,
+                FinResCurrencyDisplay = FinResCurrencyDisplay,
+                Quote = Quote,
+                CrossRate = CrossRate,
+                GORateLong = GORateLong,
+                GORateShort = GORateShort,
+                InstrumentGORate = InstrumentGORate,
+                PositionCost = PositionCost
             };
         }
     }

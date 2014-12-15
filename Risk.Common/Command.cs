@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace Risk
@@ -9,20 +11,7 @@ namespace Risk
     /// </summary>
     [Serializable]
     [DataContract]
-    [KnownType(typeof(Parameter))]
-    [KnownType(typeof(Rate[]))]
-    [KnownType(typeof(Alert[]))]
-    [KnownType(typeof(PortfolioRule[]))]
-    [KnownType(typeof(Client[]))]
-    [KnownType(typeof(Portfolio[]))]
-    [KnownType(typeof(Position[]))]
-    [KnownType(typeof(Trade[]))]
-    [KnownType(typeof(Order[]))]
-    [KnownType(typeof(PortfolioRuleInfo[]))]
-    [KnownType(typeof(AlertInfo[]))]
-    [KnownType(typeof(ConnectionInfo[]))]
-    [KnownType(typeof(RiskSettings))]
-    [KnownType(typeof(HierarchyObject[]))]
+    [KnownType("KnownTypes")]
     public class Command
     {
         private ParameterCollection _parameters;
@@ -57,6 +46,9 @@ namespace Risk
         }
 
         [DataMember]
+        public FieldInfo[] FieldsInfo { get; set; }
+
+        [DataMember]
         public object Data { get; set; }
 
         private int CommandDataRowCount()
@@ -68,6 +60,24 @@ namespace Risk
                 return ((Array)Data).Length;
 
             return 0;
+        }
+
+        private static IEnumerable<Type> _knownTypes;
+
+        public static IEnumerable<Type> KnownTypes()
+        {
+            if (_knownTypes == null)
+            {
+                // TODO: ??? Check contract name unique
+                var knownTypes = (from type in Assembly.GetExecutingAssembly().GetTypes()
+                                  where type.IsSerializable
+                                     || Attribute.GetCustomAttribute(type, typeof(DataContractAttribute)) != null
+                                  select type).ToList();
+                knownTypes.AddRange((from type in knownTypes
+                                    select type.MakeArrayType()).ToArray());
+                _knownTypes = knownTypes.ToArray();
+            }
+            return _knownTypes;
         }
 
         public override string ToString()

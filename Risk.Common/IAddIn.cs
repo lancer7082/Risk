@@ -7,11 +7,12 @@ namespace Risk
     /// </summary>
     public interface IAddIn
     {
-        // TODO: !!! void Configure(Configuration)
         string Name();
         string Version();
         void Start(IServer server);
         void Stop();
-        void Execute(Command command);
+        object Execute(Command command);
+        void Configure(string configuration);
+        string GetConfiguration();
     }
 }

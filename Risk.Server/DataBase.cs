@@ -1,14 +1,17 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Linq;
 using System.Data.Linq.Mapping;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
 using System.Xml.Serialization;
 using System.IO;
 using System.Text;
 using NLog;
+using Risk.Commands;
 
 namespace Risk
 {
@@ -28,66 +31,41 @@ namespace Risk
         }
 
         #region StoredProcedures
-        [Function(Name = "[Risk].[Clients]")]
-        private IEnumerable<Client> GetClients([Parameter(Name = "firmId", DbType = "TinyInt")]byte firmId)
-        {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId);
-            return ((IEnumerable<Client>)(result.ReturnValue));
-        }
 
         /// <summary>
-        /// Получение счетов ММА из БД
+        /// Получение позиций Этны на момент начала торговой сессии
         /// </summary>
         /// <param name="firmId"></param>
         /// <returns></returns>
-        [Function(Name = "[Risk].[Portfolios]")]
-        private IEnumerable<Portfolio> GetPortfolios([Parameter(Name = "firmId", DbType = "TinyInt")]byte firmId)
+        [Function(Name = "[Risk].[EtnaOpenPositions]")]
+        public IEnumerable<ETNAPosition> GetEtnaOpenPositions([Parameter(Name = "firmId", DbType = "TinyInt")]byte firmId)
         {
             IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId);
-            return ((IEnumerable<Portfolio>)(result.ReturnValue));
-        }
-
-        [Function(Name = "[Risk].[GetSessionInitialData]")]
-        private IEnumerable<SessionInitialData> GetSessionInitialData([Parameter(Name = "firmId", DbType = "TinyInt")]byte firmId)
-        {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId);
-            return ((IEnumerable<SessionInitialData>)(result.ReturnValue));
+            return ((IEnumerable<ETNAPosition>)(result.ReturnValue));
         }
 
         /// <summary>
-        /// Получение вводов/выводов в пределах текущей сессии
+        /// Получение данных по позициям из RRM
         /// </summary>
-        /// <param name="firmId"></param>
         /// <returns></returns>
-        [Function(Name = "[Risk].[MoneyInOutDay]")]
-        private IEnumerable<MoneyInOut> GetMoneyInOutDay([Parameter(Name = "firmId", DbType = "TinyInt")]byte firmId)
+        [Function(Name = "[Risk].[GetRRMPositionsSummary]")]
+        [ResultType(typeof(ExternalPosition))]
+        public IMultipleResults GetRRMPositionsSummary()
         {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId);
-            return ((IEnumerable<MoneyInOut>)(result.ReturnValue));
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())));
+            return (IMultipleResults)result.ReturnValue;
         }
 
         /// <summary>
-        /// Получение курсов на начало сессии из БД
+        /// Получение данных по позициям из FORTS
         /// </summary>
-        /// <param name="date"></param>
         /// <returns></returns>
-        [Function(Name = "[Risk].[Rates]")]
-        public IEnumerable<Rate> GetRates([Parameter(Name = "Date", DbType = "DATE")]DateTime date)
+        [Function(Name = "[Risk].[GetFORTSPositionsSummary]")]
+        [ResultType(typeof(FORTSPosition))]
+        public IMultipleResults GetFORTSPositionsSummary()
         {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), date);
-            return ((IEnumerable<Rate>)(result.ReturnValue));
-        }
-
-        /// <summary>
-        /// Получение данных по инструментам на начало сессии из БД
-        /// </summary>
-        /// <param name="date"></param>
-        /// <returns></returns>
-        [Function(Name = "[Risk].[Instruments]")]
-        public IEnumerable<Instrument> GetInstruments([Parameter(Name = "Date", DbType = "DATE")]DateTime date)
-        {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), date);
-            return ((IEnumerable<Instrument>)(result.ReturnValue));
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())));
+            return (IMultipleResults)result.ReturnValue;
         }
 
         /// <summary>
@@ -120,28 +98,13 @@ namespace Risk
         /// </summary>
         [Function(Name = "[Risk].[Alert::Send]")]
         private int NotifyClientTransaq(
-            [Parameter(Name = "nnFirm",     DbType = "TinyInt")]    byte firmId,
-            [Parameter(Name = "TradeCode",  DbType = "VARCHAR(30)")]string TradeCode,
-            [Parameter(Name = "Login",      DbType = "VARCHAR(30)")]string Login,
-            [Parameter(Name = "Message",    DbType = "VARCHAR(8000)")]string Message)
+            [Parameter(Name = "nnFirm", DbType = "TinyInt")]    byte firmId,
+            [Parameter(Name = "TradeCode", DbType = "VARCHAR(30)")]string TradeCode,
+            [Parameter(Name = "Login", DbType = "VARCHAR(30)")]string Login,
+            [Parameter(Name = "Message", DbType = "VARCHAR(8000)")]string Message)
         {
             IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId, TradeCode, Login, Message);
             return (int)(result.ReturnValue);
-        }
-
-        /// <summary>
-        /// Проверка получения рыночных данных из Transaq
-        /// по выбранным инструментам
-        /// </summary>
-        [Function(Name = "[Risk].[CheckTransaqPrices]")]
-        public int CheckTransaqPrices(
-            [Parameter(Name = "Instruments",DbType = "VARCHAR(8000)")]ref string instruments,
-            [Parameter(Name = "Status",     DbType = "TINYINT")]ref byte status)
-        {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), instruments, status);
-            instruments = (string)(result.GetParameterValue(0));
-            status = (byte)(result.GetParameterValue(1));
-            return status;
         }
 
         /// <summary>
@@ -151,63 +114,200 @@ namespace Risk
         /// <returns></returns>
         [Function(Name = "[Risk].[SaveOrder]")]
         private int SaveOrder(
-            [Parameter(Name = "Date",       DbType = "DATETIME")]DateTime date,
-            [Parameter(Name = "OrderId",    DbType = "INT")]ref int orderId,
-            [Parameter(Name = "OrderNo",    DbType = "INT")]int orderNo,
-            [Parameter(Name = "TradeCode",  DbType = "VARCHAR(30)")]string tradeCode,
-            [Parameter(Name = "SecCode",    DbType = "VARCHAR(50)")]string secCode,
-            [Parameter(Name = "Quantity",   DbType = "INT")]int quantity,
-            [Parameter(Name = "Price",      DbType = "NUMERIC(18,4)")]decimal price,
-            [Parameter(Name = "OrderType",  DbType = "TINYINT")]byte orderType,
-            [Parameter(Name = "OrderStatus",DbType = "TINYINT")]byte orderStatus)
+            [Parameter(Name = "Date", DbType = "DATETIME")]DateTime date,
+            [Parameter(Name = "OrderId", DbType = "INT")]ref int orderId,
+            [Parameter(Name = "OrderNo", DbType = "INT")]int orderNo,
+            [Parameter(Name = "TradeCode", DbType = "VARCHAR(30)")]string tradeCode,
+            [Parameter(Name = "SecCode", DbType = "VARCHAR(50)")]string secCode,
+            [Parameter(Name = "Quantity", DbType = "INT")]int quantity,
+            [Parameter(Name = "Price", DbType = "NUMERIC(18,4)")]decimal price,
+            [Parameter(Name = "OrderType", DbType = "TINYINT")]byte orderType,
+            [Parameter(Name = "OrderStatus", DbType = "TINYINT")]byte orderStatus)
         {
-            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), 
-                date, orderId, orderNo, tradeCode, secCode, quantity, price, 
+            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())),
+                date, orderId, orderNo, tradeCode, secCode, quantity, price,
                 orderType, orderStatus);
             orderId = (int)(result.GetParameterValue(1));
             return (int)(result.ReturnValue);
         }
 
-        #endregion
-
-        public void CheckConnection()
+        /// <summary>
+        /// Загрузка поручений
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[LoadOrders]")]
+        public IEnumerable<Order> LoadOrders()
         {
-            lock (Connection)
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())));
+            return (IEnumerable<Order>)result.ReturnValue;
+        }
+
+        /// <summary>
+        /// Сохранение оповещения в БД
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[SaveNotification]")]
+        private int SaveNotification(
+            [Parameter(Name = "Id", DbType = "BIGINT")]out long id,
+            [Parameter(Name = "AlertId", DbType = "uniqueidentifier")]Guid alertId,
+            [Parameter(Name = "Type", DbType = "INT")]int? type,
+            [Parameter(Name = "DeliveryMethod", DbType = "INT")]int deliveryMethod,
+            [Parameter(Name = "TradeCode", DbType = "VARCHAR(20)")]string tradeCode,
+            [Parameter(Name = "Recipients", DbType = "VARCHAR(MAX)")]string recipients,
+            [Parameter(Name = "MessageText", DbType = "VARCHAR(MAX)")]string messageText,
+            [Parameter(Name = "UpdateDate", DbType = "DATETIME")]DateTime updateDate)
+        {
+            id = 0;
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), id, alertId,
+                type, deliveryMethod, tradeCode, recipients, messageText, updateDate);
+            id = (long)(result.GetParameterValue(0));
+            return (int)(result.ReturnValue);
+        }
+
+        /// <summary>
+        /// Загрузка оповещений
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[LoadNotifications]")]
+        public IEnumerable<SavedNotification> LoadNotifications(
+            [Parameter(Name = "DateFrom", DbType = "DATETIME")]DateTime dateFrom,
+            [Parameter(Name = "DateTo", DbType = "DATETIME")]DateTime dateTo)
+        {
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), dateFrom, dateTo);
+            return (IEnumerable<SavedNotification>)result.ReturnValue;
+        }
+
+        /// <summary>
+        /// Загрузка оповещений
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[LoadTrades]")]
+        public IEnumerable<Trade> LoadTrades(
+            [Parameter(Name = "DateFrom", DbType = "DATETIME")]DateTime dateFrom,
+            [Parameter(Name = "DateTo", DbType = "DATETIME")]DateTime dateTo)
+        {
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), dateFrom, dateTo);
+            return (IEnumerable<Trade>)result.ReturnValue;
+        }
+
+        /// <summary>
+        /// Изменяет торговые параметры клиента
+        /// </summary>
+        [Function(Name = "[Risk].[UpdateTraderAccountParameters]")]
+        public int ChangeTraderAccountParameters(
+           [Parameter(Name = "ClientCodes", DbType = "VARCHAR(MAX)")]string clientCodes,
+           [Parameter(Name = "BsStopDeny", DbType = "BIT")]bool? bsStopDeny,
+           [Parameter(Name = "GoCoeff", DbType = "INT")]int? goCoeff,
+           [Parameter(Name = "AccessAuction", DbType = "BIT")]bool? accessAuction,
+           [Parameter(Name = "Retain", DbType = "VARCHAR(20)")]string retain,
+           [Parameter(Name = "Login", DbType = "VARCHAR(MAX)")]string login)
+        {
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), clientCodes, bsStopDeny, goCoeff,
+                accessAuction, retain, login);
+            return (int)(result.ReturnValue);
+        }
+
+        /// <summary>
+        /// Сохраняет торговую статистику по клиенту
+        /// </summary>
+        [Function(Name = "[Risk].[SaveClientTradingStatistic]")]
+        public int SaveClientTradingStatistic(
+
+            [Parameter(Name = "TradeId", DbType = "BIGINT")]long tradeId,
+            [Parameter(Name = "OrderId", DbType = "BIGINT")]long orderId,
+            [Parameter(Name = "UpdateDate", DbType = "DATETIME")]DateTime updateDate,
+            [Parameter(Name = "Login", DbType = "VARCHAR(50)")]string login,
+            [Parameter(Name = "TradeCode", DbType = "VARCHAR(50)")]string tradeCode,
+            [Parameter(Name = "Client", DbType = "VARCHAR(150)")]string client,
+            [Parameter(Name = "PortfolioCurrency", DbType = "VARCHAR(3)")]string portfolioCurrency,
+            [Parameter(Name = "Capital", DbType = "NUMERIC(18,4)")]decimal capital,
+            [Parameter(Name = "CoverageFact", DbType = "NUMERIC(18,4)")]decimal coverageFact,
+            [Parameter(Name = "UtilizationFact", DbType = "NUMERIC(18,4)")]decimal utilizationFact,
+
+            [Parameter(Name = "SecCode", DbType = "VARCHAR(50)")]string secCode,
+            [Parameter(Name = "SecurityCurrency", DbType = "VARCHAR(3)")]string securityCurrency,
+            [Parameter(Name = "Quote", DbType = "NUMERIC(18,4)")]decimal quote,
+            [Parameter(Name = "OpenBalance", DbType = "INT")]int openBalance,
+            [Parameter(Name = "Bought", DbType = "INT")]int bought,
+            [Parameter(Name = "Sold", DbType = "INT")]int sold,
+            [Parameter(Name = "Balance", DbType = "INT")]int balance,
+            [Parameter(Name = "PL", DbType = "NUMERIC(18,4)")]decimal pl)
+        {
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), tradeId, orderId, updateDate, login, tradeCode,
+                client, portfolioCurrency, capital, coverageFact, utilizationFact, secCode, securityCurrency, quote,
+                openBalance, bought, sold, balance, pl);
+            return (int)(result.ReturnValue);
+        }
+
+        /// <summary>
+        /// Изменяет параметры инструментов
+        /// </summary>
+        [Function(Name = "[Risk].[UpdateInstrumentsParameters]")]
+        public int ChangeInstrumentsParameters(
+            [Parameter(Name = "Codes", DbType = "VARCHAR(MAX)")]string codes,
+            [Parameter(Name = "Enabled", DbType = "BIT")]bool? enabled,
+            [Parameter(Name = "MarketPermitted", DbType = "BIT")]bool? marketPermitted,
+            [Parameter(Name = "LongPermitted", DbType = "BIT")]bool? longPermitted,
+            [Parameter(Name = "ShortPermitted", DbType = "BIT")]bool? shortPermitted,
+            [Parameter(Name = "Resident", DbType = "INT")]int? resident,
+            [Parameter(Name = "BsStopDeny", DbType = "BIT")]bool? bsStopDeny,
+            [Parameter(Name = "BsStopDenyZone", DbType = "INT")]int? bsStopDenyZone,
+            [Parameter(Name = "Login", DbType = "VARCHAR(MAX)")]string login
+           )
+        {
+            const int partSize = 30;
+            const string delimeter = ",";
+
+            IExecuteResult result = null;
+            var splittedCodes = codes.Split(delimeter.ToCharArray()).ToList();
+            if (splittedCodes.Count < partSize)
             {
-                if (Connection.State == ConnectionState.Broken)
+                result  = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), codes, enabled,
+                             marketPermitted, longPermitted, shortPermitted, resident, bsStopDeny, bsStopDenyZone, login);
+            }
+            else
+            {
+                while (splittedCodes.Any())
                 {
-                    Connection.Close();
-                    Connection.Open();
-                }
-                if (Connection.State == ConnectionState.Closed)
-                {
-                    Connection.Open();
-                    return;
+                    var partCodes = splittedCodes.Take(partSize).ToList();
+                    
+                    if (splittedCodes.Count > partSize)
+                        splittedCodes.RemoveRange(0, partSize);
+                    else
+                        splittedCodes.Clear();
+
+                    var partCodesString = partCodes.Aggregate(string.Empty, (s, s1) => s + s1 + delimeter).TrimEnd(delimeter.ToCharArray());
+                    result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), partCodesString, enabled,
+                        marketPermitted, longPermitted, shortPermitted, resident, bsStopDeny, bsStopDenyZone, login);
                 }
             }
+            return (int)(result.ReturnValue);
         }
 
-        public IEnumerable<Client> GetClients()
+        /// <summary>
+        /// Получение итоговый результата
+        /// </summary>
+        /// <param name="firmId"></param>
+        /// <param name="currencyCalc"></param>
+        /// <param name="dateFrom"></param>
+        /// <param name="dateTo"></param>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[FinRes]")]
+        public IEnumerable<FinancialResult> LoadFinancialResults(
+            [Parameter(Name = "FirmId", DbType = "TinyInt")] byte firmId,
+            [Parameter(Name = "CurrencyCalc", DbType = "VARCHAR(3)")] string currencyCalc,
+            [Parameter(Name = "DateFrom", DbType = "DATETIME")] DateTime? dateFrom,
+            [Parameter(Name = "DateTo", DbType = "DATETIME")] DateTime? dateTo)
         {
-            return GetClients(FirmId);
+            IExecuteResult result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), firmId, currencyCalc, dateFrom, dateTo);
+            return ((IEnumerable<FinancialResult>)(result.ReturnValue));
         }
 
-        public IEnumerable<Portfolio> GetPortfolios()
-        {
-            var result = GetPortfolios(FirmId);
-            return result;
-        }
+        #endregion
 
-        public IEnumerable<SessionInitialData> GetSessionInitialData()
+        public IEnumerable<ETNAPosition> GetEtnaOpenPositions()
         {
-            var result = GetSessionInitialData(FirmId);
-            return result;
-        }
-
-        public IEnumerable<MoneyInOut> GetMoneyInOutDay()
-        {
-            var result = GetMoneyInOutDay(FirmId);
-            return result;
+            return GetEtnaOpenPositions(FirmId);
         }
 
         public sealed class Utf8StringWriter : StringWriter
@@ -241,11 +341,13 @@ namespace Risk
         {
             string settings = null;
             RiskSettings rs = null;
-            ReadSettings(ref settings);
-            if (String.IsNullOrEmpty(settings)) return null;
+
 
             try
             {
+                ReadSettings(ref settings);
+                if (String.IsNullOrEmpty(settings)) return null;
+
                 XmlSerializer xs = new XmlSerializer(typeof(RiskSettings));
                 using (var sr = new StringReader(settings))
                 {
@@ -267,10 +369,11 @@ namespace Risk
         public void NotifyClientTransaq(string TradeCode, string Login, string Message)
         {
             // Для тестирования отправляем сообщение только по выбранным клиентам
-            //TradeCode = "MCE1026"; 
+#if DEBUG
             if (TradeCode == "MCE1026")
+#endif
             {
-                NotifyClientTransaq(FirmId, TradeCode, Login, Message);   
+                NotifyClientTransaq(FirmId, TradeCode, Login, Message);
             }
         }
 
@@ -280,10 +383,73 @@ namespace Risk
         public int SaveOrder(Order order)
         {
             int orderId = order.OrderId;
-            SaveOrder(order.Date, ref orderId, (int)order.OrderNo, order.TradeCode, 
-                order.SecСode, order.Quantity, order.Price,
+            SaveOrder(order.Date, ref orderId, (int)order.OrderNo, order.TradeCode,
+                order.SecCode, order.Quantity, order.Price,
                 (byte)order.OrderType, 0);
             return orderId;
         }
+
+        /// <summary>
+        /// Сохранение поручения в БД
+        /// </summary>
+        public long SaveNotification(SavedNotification notification)
+        {
+            long id;
+
+            int? notificationType = null;
+            if (notification.Type.HasValue)
+                notificationType = (int)notification.Type;
+
+            SaveNotification(out id, notification.AlertId, notificationType, (int)notification.DeliveryMethod, notification.TradeCode, notification.Recipients,
+                notification.MessageText, notification.UpdateDate);
+            return id;
+        }
+    }
+
+    /// <summary>
+    /// todo перенести
+    /// Сохраненные в БД оповещения пользователя
+    /// </summary>
+    public class SavedNotification
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public long Id { get; set; }
+
+        /// <summary>
+        /// AlertId
+        /// </summary>
+        public Guid AlertId { get; set; }
+
+        /// <summary>
+        /// Тип оповещения
+        /// </summary>
+        public RuleType? Type { get; set; }
+
+        /// <summary>
+        /// Способ доставки оповещения
+        /// </summary>
+        public NotifyType DeliveryMethod { get; set; }
+
+        /// <summary>
+        /// Торговый код
+        /// </summary>
+        public string TradeCode { get; set; }
+
+        /// <summary>
+        /// Получатели
+        /// </summary>
+        public string Recipients { get; set; }
+
+        /// <summary>
+        /// Текс сообщения
+        /// </summary>
+        public string MessageText { get; set; }
+
+        /// <summary>
+        /// Дата опповещения
+        /// </summary>
+        public DateTime UpdateDate { get; set; }
     }
 }

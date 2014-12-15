@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Risk
+namespace Risk.Commands
 {
     /// <summary>
     ///  Команда закрытия позиций по счету, вызываемая с клиента
@@ -14,6 +11,9 @@ namespace Risk
     {
         protected internal override void InternalExecute()
         {
+            if (Connection != null)
+                Connection.CheckDealerUser();
+
             string TradeCode = Parameters["TradeCode"].ToString();
 
             if (String.IsNullOrWhiteSpace(TradeCode))
@@ -28,7 +28,7 @@ namespace Risk
 
             var positions = from pos in Server.Positions
                             where pos.TradeCode == TradeCode &&
-                                pos.Balance != 0    
+                                pos.Balance != 0
                             select pos;
 
             var time = Server.Current.ServerTime;
@@ -38,14 +38,14 @@ namespace Risk
                 var order = new Order
                 {
                     TradeCode = pos.TradeCode,
-                    SecСode = pos.SecCode,
+                    SecCode = pos.SecCode,
                     Date = time,
                     Quantity = Math.Abs(pos.Balance),
                     Price = 0,
                     OrderType = pos.Balance > 0 ? OrderType.Sell : OrderType.Buy,
                     MarginCall = true,
                 };
-                
+
                 Server.Current.AddIns["Risk.Transaq.TransaqAddIn, Risk.Transaq"].Execute
                     (
                         new Command
@@ -55,23 +55,6 @@ namespace Risk
                         }
                     );
             }
-
-            // Отправка оповещения о закрытии позиций пользователю и клиенту
-            new CommandInsert
-            {
-                Object = Server.Alerts,
-                Data = new Alert
-                {
-                    DateTime = time,
-                    Portfolio = portfolio,
-                    NotifyType = Server.Settings.NotifyTypeMaxPercentUtilMarginCall,
-                    Text = String.Format(@"В соответствии с регламентом проведения
-торгов {0} все открытые позиции по счету {1} принудительно закрыты в связи с 
-недостаточным обеспечением. % использования капитала = {2}", time.ToLongDateString(), 
-                        portfolio.TradeCode, Math.Round(portfolio.UtilizationFact, 2)),
-                },
-            };
-  
         }
     }
 }

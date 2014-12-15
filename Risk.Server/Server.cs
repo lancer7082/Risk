@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Configuration;
 using System.ServiceModel;
 using System.ServiceModel.Description;
 using System.Threading;
+using Risk.Commands;
+using Risk.Configuration;
 
 namespace Risk
 {
@@ -11,7 +12,17 @@ namespace Risk
     /// </summary>
     public class Server : ServerBase
     {
-        private byte firmId;
+        public const string ETNAAddInName = "Finam.AddIns.ETNA.ETNAAddIn, Finam.AddIns.ETNA";
+
+        public string ConnectionString { get; set; }
+
+        public byte? FirmId { get; set; }
+
+        public string TransaqUsaHostName { get; set; }
+
+        public int DatabaseCommandTimeout { get; set; }
+
+        public int AutoMarginCallInterval { get; set; }
 
         /// <summary>
         /// Клиенты (только для теста)
@@ -64,32 +75,64 @@ namespace Risk
         public static readonly Instruments Instruments = new Instruments();
 
         /// <summary>
+        /// Группы инструментов
+        /// </summary>
+        public static readonly InstrumentGroups InstrumentGroups = new InstrumentGroups();
+
+        /// <summary>
+        /// Информация о ставках ГО инструментов
+        /// </summary>
+        public static readonly InstrumentsGOInfo InstrumentsGOInfo = new InstrumentsGOInfo();
+
+        /// <summary>
+        /// Финансовый результат
+        /// </summary>
+        public static readonly FinancialResults FinancialResults = new FinancialResults();
+
+        /// <summary>
+        /// AutoMarginCallInfos
+        /// </summary>
+        public static readonly AutoMarginCallInfos AutoMarginCallInfos = new AutoMarginCallInfos();
+
+        /// <summary>
+        /// AccountsLimits
+        /// </summary>
+        public static readonly AccountsLimits AccountsLimits = new AccountsLimits();
+
+        /// <summary>
         /// Настройки
         /// </summary>
         public static RiskSettings Settings;
 
-        // Timers TODO: !!! Перенести на Jobs
-        private Timer timerClients;
-        private Timer timerPortfolios;
-        private Timer timerMoneyInOutDay;
-        private Timer timerRates;
-        private Timer timerInstruments;
-        private Timer timerCheckTransaqPrices;
+        private readonly AutoMarginCall _autoMarginCall = new AutoMarginCall();
+
+        private readonly CheckInstrumentsQuotes _checkInstrumentsQuotes = new CheckInstrumentsQuotes();
+
+        /// <summary>
+        /// Загрузка конфигурации
+        /// </summary>
+        public void LoadConfig()
+        {
+            ServerConfigurationSection = RiskServerSection.GetSection<RiskServerSection>("riskServer", this);
+            ServerConfigurationSection.ApplyConfigToObject();
+
+            if (!FirmId.HasValue)
+                throw new Exception("Not found 'firmId' in config");
+            if (string.IsNullOrEmpty(ConnectionString))
+                throw new Exception("Not found connection string in config");
+        }
 
         public override void Configure()
         {
+            LoadConfig();
+
             base.Configure();
 
             // Configure DataBase
-            var css = ConfigurationManager.ConnectionStrings["Risk"];
-            if (css == null)
-                throw new Exception("Not found connection string 'Risk' in config");
-            var firmIdConfig = ConfigurationManager.AppSettings["FirmId"];
-            if (firmIdConfig == null)
-                throw new Exception("Not found AppSettings 'FirmId' in config");
-            firmId = byte.Parse(firmIdConfig);
-            DataBase = new DataBase(css.ConnectionString, firmId);
-            DataBase.CommandTimeout = 60 * 5;
+            DataBase = new DataBase(ConnectionString, FirmId.Value)
+            {
+                CommandTimeout = DatabaseCommandTimeout
+            };
 
             // Configure Settings
             Settings = DataBase.ReadSettings() ?? new RiskSettings();
@@ -97,6 +140,8 @@ namespace Risk
             Register(new RiskSettingsView());
 
             // Register tables
+            Register(new TestTable());
+            Register(new TestTableResultInfo());
             Register(Clients);
             Register(Portfolios);
             Register(ExchangeRates);
@@ -107,215 +152,73 @@ namespace Risk
             Register(Orders);
             Register(PortfolioRules);
             Register(Instruments);
+            Register(InstrumentGroups);
+            Register(InstrumentsGOInfo);
+            Register(FinancialResults);
+            Register(AutoMarginCallInfos);
+            Register(AccountsLimits);
 
-            // Получение данных по инструментам
-            timerInstruments = new Timer(c =>
-            {
-                log.Trace("Start job 'Update Instruments from SQL' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                        new CommandMerge
-                        {
-                            Object = Instruments,
-                            Data = DataBase.GetInstruments(ServerTime),
-                            Fields = "Decimals,Bpcost,Lotsize",
-                        }.Execute();
-                    }
-                    log.Info("Success job 'Update Instruments from SQL'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 300 * 1000);
+            LoadOrders();
 
-            // Получение курсов
-            // TODO: !!! Jobs.Add("Update ExchangeRates from SQL", 0, 120 * 1000, x =>
-            timerRates = new Timer(c =>
-            {
-                log.Trace("Start job 'Update ExchangeRates from SQL' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                    }
-                    log.Info("Success job 'Update ExchangeRates from SQL'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 120 * 1000);
-
-            // TODO: !!! Jobs.Add("Update Portfolios from SQL", 0, 300 * 1000, x =>
-            timerPortfolios = new Timer(c =>
-            {
-                log.Trace("Start job 'Update Portfolios from SQL' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                        new CommandMerge
-                        {
-                            Object = Portfolios,
-                            Data = DataBase.GetPortfolios(),
-                            Fields = "AccountId,Client,CodeWord,Currency,MoneyInInit,MoneyOutInit,Active,Contragent,FinRes",
-                        }.Execute();
-                    }
-                    log.Info("Success job 'Update Portfolios from SQL'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 180 * 1000);
-
-            // TODO: !!! Jobs.Add("Update Portfolios MoneyInOutDay from SQL", 0, 300 * 1000, x =>
-            timerMoneyInOutDay = new Timer(c =>
-            {
-                log.Trace("Start job 'Update Portfolios MoneyInOutDay from SQL' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                        new CommandUpdate
-                        {
-                            Object = Portfolios,
-                            Data = DataBase.GetMoneyInOutDay(),
-                            Fields = "MoneyInDay,MoneyOutDay",
-                        }.Execute();
-                    }
-                    log.Info("Success job 'Update Portfolios MoneyInOutDay from SQL'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 120 * 1000);
-
-            // Проверка получения рыночных данных из Transaq
-            // по выбранным инструментам
-            timerCheckTransaqPrices = new Timer(c =>
-            {
-                log.Trace("Start job 'Check Transaq prices' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                        string instruments = "";
-                        byte status = 0;
-                        if (DataBase.CheckTransaqPrices(ref instruments, ref status) == 0)
-                        {
-                            var alerts = new Alert[] {
-                                new Alert 
-                                { 
-                                    DateTime = Server.Current.ServerTime,                                
-                                    Text = String.Format("Рыночные данные по инструментам {0} не получены", instruments),                                 
-                                }
-                            };
-
-                            new CommandInsert
-                            {
-                                Object = Server.Alerts,
-                                Data = alerts,
-                            }.ExecuteAsync();
-                        }
-                    }
-                    log.Info("Success job 'Check Transaq prices'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 180 * 1000);
-
-            // TODO: !!! Jobs.Add("Update Clients from SQL", 0, 300 * 1000, x =>
-            timerClients = new Timer(c =>
-            {
-                log.Trace("Start job 'Update Clients from SQL' : {0}", css.ConnectionString);
-                try
-                {
-                    lock (DataBase)
-                    {
-                        new CommandMerge
-                        {
-                            Object = Clients,
-                            Data = DataBase.GetClients()
-                        }.Execute();
-                    }
-                    log.Info("Success job 'Update Clients from SQL'");
-                }
-                catch (Exception ex)
-                {
-                    log.ErrorException(ex.Message, ex);
-                }
-            }, null, 0, 120 * 1000);
-
-            /*
-            // Тестирование оповещений
-            timerRates = new Timer(c =>
-            {
-                new CommandMessage { MessageType = MessageType.Info, Message = "Test" }.ExecuteAsync();
-
-            }, null, 0, 10 * 1000);
-            */
-
-            /*
-            // Тестовые позиции
-            var positions = new System.Collections.Generic.List<Position>();
-            positions.Add(new Position
-            { 
-                AccountId = 1, TradeCode = "1", Balance = 100, Bought = 0, Sold = 100, SecCode = "A", 
-            });
-            (new CommandServer
-            {
-                DataObject = Positions,
-                //Text = "Positions",
-                Data = positions,
-                Fields = new string[] { "AccountId", "TradeCode", "SecCode", "Bought", "Sold", "Balance", "PL", "SecurityCurrency" },
-                MergeKeyFields = new string[] { "TradeCode" },
-            }).ExecuteAsync();
-            //*/
-
-            /*
-            // Тестовые поручения
-            //var orders = new System.Collections.Generic.List<Order>();
-            var order = new Order()
-            {
-                Date = ServerTime,
-                OrderId = 1,
-                OrderNo = 1,
-                OrderType = OrderType.Buy,
-                Price = 0,
-                Quantity = 1,
-                SecСode = "A",
-                TradeCode = "B",
-            };
-            new CommandInsert
-            {
-                Object = Orders,
-                Data = order,
-            }.ExecuteAsync();
-            //*/
-
-            // Configure AddIns
-            AddIns.Register("Risk.Transaq.TransaqAddIn, Risk.Transaq", 0);
+            JobManager.StartAllJobs();
 
             // Configure WCF
-            ServiceHost = new ServiceHost(typeof(ConnectionWCF) /*, new Uri("http://localhost:8001/Risk") */);
-            ServiceDescription serviceDesciption = ServiceHost.Description;
-            if (serviceDesciption.Endpoints.Count == 0)
+            InitWCFConnection();
+
+            _checkInstrumentsQuotes.Start();
+            _autoMarginCall.Start(AutoMarginCallInterval);
+
+            ThreadPool.QueueUserWorkItem(state =>
             {
-#if DEBUG
-                var NetTCPUri = new Uri("net.tcp://localhost:26455/Risk");
-#else
-                var NetTCPUri = new Uri("net.tcp://bofm.finam.ru:26455/Risk");
-#endif
-                var binding = new NetTcpBinding(SecurityMode.None);
-                ServiceHost.AddServiceEndpoint(typeof(IConnection), binding, NetTCPUri.ToString());
-            };
+                while (true)
+                {
+                    new CommandGetAccountsLimits().Execute();
+                    Thread.Sleep(15 * 60 * 1000);
+                }
+            });
+
+
+            ThreadPool.QueueUserWorkItem(state =>
+            {
+                Thread.Sleep(10 * 1000);
+                while (true)
+                {
+                    var alert = new Alert
+                    {
+                        DateTime = DateTime.Now,
+                        Text = "Test",
+                        AlertType = AlertType.NewPositionInMarginCall
+                    };
+
+                    new CommandInsert
+                    {
+                        Object = Server.Alerts,
+                        Data = alert,
+                    }.Execute();
+
+                    Thread.Sleep(10 * 1000);
+                }
+            });
+
+
+            //ThreadPool.QueueUserWorkItem(state =>
+            //{
+            //    Thread.Sleep(2 * 60 * 1000);
+            //    while (true)
+            //    {
+            //        var cmd = new CommandAutoMarginCallClose();
+            //        cmd.Parameters = new ParameterCollection
+            //        {
+            //            new Parameter
+            //            {
+            //                Name = "TradeCode",
+            //                Value = "MCE1026"
+            //            }
+            //        };
+            //        cmd.Execute();
+            //        Thread.Sleep(60 * 1000);
+            //    }
+            //});
 
             // TODO: ???
             //foreach (ServiceEndpoint endpoint in serviceDesciption.Endpoints)
@@ -333,6 +236,48 @@ namespace Risk
             //}
             //smb.HttpGetEnabled = true;
             //serviceHost.AddServiceEndpoint(ServiceMetadataBehavior.MexContractName, MetadataExchangeBindings.CreateMexHttpBinding(), "mex");
+        }
+
+        /// <summary>
+        /// Инициализация WCFConnection
+        /// </summary>
+        protected override void InitWCFConnection()
+        {
+            ServiceHost = new ServiceHost(typeof(ConnectionWCF) /*, new Uri("http://localhost:8001/Risk") */);
+            ServiceDescription serviceDesciption = ServiceHost.Description;
+            if (serviceDesciption.Endpoints.Count == 0)
+            {
+#if DEBUG
+                var NetTCPUri = new Uri("net.tcp://localhost:26455/Risk");
+#else
+                var NetTCPUri = new Uri("net.tcp://bofm.finam.ru:26455/Risk");
+#endif
+                var binding = new NetTcpBinding(SecurityMode.None);
+                binding.ReceiveTimeout = new TimeSpan(0, 5, 0);
+                binding.SendTimeout = new TimeSpan(0, 5, 0);
+                ServiceHost.AddServiceEndpoint(typeof(IConnection), binding, NetTCPUri.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Загрузка поручений
+        /// </summary>
+        private void LoadOrders()
+        {
+            try
+            {
+                var orders = DataBase.LoadOrders();
+
+                ProcessCommand(new CommandInsert
+                {
+                    Object = Orders,
+                    Data = orders
+                });
+            }
+            catch (Exception e)
+            {
+                Log.ErrorException(String.Format("Can't load orders: {0}", e.Message), e);
+            }
         }
     }
 }

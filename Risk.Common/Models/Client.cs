@@ -6,6 +6,7 @@ namespace Risk
     /// <summary>
     /// Клиент
     /// </summary>
+    [Serializable]
     public class Client : ICloneable // TODO: ??? INotifyPropertyChanged
     {
         public int Id { get; set; }

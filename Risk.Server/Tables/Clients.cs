@@ -9,12 +9,13 @@ namespace Risk
     [Table("Clients", KeyFields = "Id")]
     public class Clients : Table<Client>
     {
-        protected override void NotifyChanges(Notification notification, NotificationData notificationData)
+        protected override void NotifyChanges<Client>(Notification notification, NotificationData<Client> notificationData)
         {
-            foreach (var item in (IEnumerable<Client>)notificationData.Data)
-            {
-                item.UpdateTime = Server.Current.ServerTime.TimeOfDay;
-            }
+            //  TODO: ???
+            //foreach (var item in (IEnumerable<Client>)notificationData.Data)
+            //{
+            //    item.UpdateTime = Server.Current.ServerTime.TimeOfDay;
+            //}
             base.NotifyChanges(notification, notificationData);
         }
     }

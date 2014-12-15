@@ -6,11 +6,8 @@ namespace Risk
     /// Портфель клиента
     /// </summary>
     [Serializable]
-    public class Portfolio : ICloneable // TODO: ??? : NotifyData, IExtensibleDataObject, INotifyPropertyChanged
+    public class Portfolio : ICloneable
     {
-        // !!! FOR DEBUG !!!
-        public TimeSpan UpdateTime { get; set; }
-
         /// <summary>
         /// Id счета
         /// </summary>
@@ -31,20 +28,10 @@ namespace Risk
         /// </summary>
         public string CodeWord { get; set; }
 
-        private string _currency;
-
         /// <summary>
         /// Валюта счета
         /// </summary>
-        public string Currency { 
-            get {
-                return _currency; 
-            }
-
-            set {
-                _currency = value;
-            }
-        }         
+        public string Currency { get; set; }
 
         /// <summary>
         /// Ввод ДС: от открытия счета
@@ -90,7 +77,7 @@ namespace Risk
         /// <summary>
         /// Оборот в USD
         /// </summary>
-        public decimal TurnoverCurrencyCalc {get; set; }
+        public decimal TurnoverCurrencyCalc { get; set; }
 
         /// <summary>
         /// Торги доступны
@@ -133,38 +120,161 @@ namespace Risk
         /// </summary>
         public bool MarginCall { get; set; }
 
+        /// <summary>
+        /// Минимальная маржа
+        /// </summary>
+        public decimal MarginMin { get; set; }
+
+        /// <summary>
+        /// Рефанд по торговому коду 
+        /// </summary>
+        /// <remarks>
+        ///	Включен = true
+        ///	Выключен = false
+        /// </remarks>
+        public bool IsRefund { get; set; }
+
+        #region Признаки превышения показателей
+
+        /// <summary>
+        /// Признак превышения прибыли 
+        /// </summary>
+        public bool IsMaxProfitExceed { get; set; }
+
+        /// <summary>
+        /// Признак превышения процента прибыли от входящего капитала
+        /// </summary>
+        public bool IsMaxPercentProfitExceed { get; set; }
+
+        /// <summary>
+        /// Признак превышения оборота по сделкам
+        /// </summary>
+        public bool IsMaxTurnoverExceed { get; set; }
+
+        /// <summary>
+        /// Признак превышения процента оборота по сделкам от входящего капитала
+        /// </summary>
+        public bool IsMaxPercentTurnoverExceed { get; set; }
+
+        /// <summary>
+        /// Торговый оборот в валюте отображения
+        /// <remarks>Правила расчета см. в ФТ 2</remarks>
+        /// </summary>
+        public decimal TurnoverCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// P\L в валюте отображения
+        /// </summary>
+        public decimal PLCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// Баланс (Обеспеченность) в валюте отображения
+        /// </summary>
+        public decimal CapitalCurrencyDisplay { get; set; }
+
+        /// <summary>
+        /// Client Email
+        /// </summary>
+        public string ClientEmail { get; set; }
+
+        /// <summary>
+        /// Доступ к торгам 
+        /// </summary>
+        public bool AccessAuction { get; set; }
+
+        /// <summary>
+        /// Коэффициент к стандартным ставкам ГО
+        /// </summary>
+        public int GoCoeff { get; set; }
+
+        /// <summary>
+        /// Запрет на заявки buy-stop и sell-stop
+        /// </summary>
+        public bool BsStopDeny { get; set; }
+
+        /// <summary>
+        /// Настройка запрета на противоположные торговые операции в инструменте после совершения сделки
+        /// </summary>
+        public string Retain { get; set; }
+
+        /// <summary>
+        /// Группа клиентов
+        /// </summary>
+        public ClientGroup GroupId { get; set; }
+
+        #endregion
+
+        /// <summary>
+        /// ToString
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return String.Format("{0} ({1})", Client, TradeCode);
         }
 
+        /// <summary>
+        /// ICloneable
+        /// </summary>
+        /// <returns></returns>
         public object Clone()
         {
             return new Portfolio
             {
-                 UpdateTime = this.UpdateTime,
-                 AccountId  = this.AccountId,
-                 Client     = this.Client,
-                 TradeCode  = this.TradeCode,
-                 CodeWord   = this.CodeWord,
-                 Currency   = this.Currency,
-                 MoneyInInit = this.MoneyInInit,
-                 MoneyInDay = this.MoneyInDay,
-                 MoneyOutInit = this.MoneyOutInit,
-                 MoneyOutDay = this.MoneyOutDay,
-                 Capital    = this.Capital,
-                 CoverageFact = this.CoverageFact,
-                 PL         = this.PL,
-                 Turnover   = this.Turnover,
-                 TurnoverCurrencyCalc = this.TurnoverCurrencyCalc,
-                 Active     = this.Active,
-                 Contragent = this.Contragent,
-                 OpenBalance = this.OpenBalance,
-                 FinRes     = this.FinRes,
-                 PLCurrencyCalc = this.PLCurrencyCalc,
-                 UtilizationFact = this.UtilizationFact,
-                 MarginCall = this.MarginCall,
+                AccountId = AccountId,
+                Client = Client,
+                TradeCode = TradeCode,
+                CodeWord = CodeWord,
+                Currency = Currency,
+                MoneyInInit = MoneyInInit,
+                MoneyInDay = MoneyInDay,
+                MoneyOutInit = MoneyOutInit,
+                MoneyOutDay = MoneyOutDay,
+                Capital = Capital,
+                CoverageFact = CoverageFact,
+                PL = PL,
+                Turnover = Turnover,
+                TurnoverCurrencyCalc = TurnoverCurrencyCalc,
+                Active = Active,
+                Contragent = Contragent,
+                OpenBalance = OpenBalance,
+                FinRes = FinRes,
+                PLCurrencyCalc = PLCurrencyCalc,
+                UtilizationFact = UtilizationFact,
+                MarginCall = MarginCall,
+                IsRefund = IsRefund,
+                IsMaxProfitExceed = IsMaxProfitExceed,
+                IsMaxPercentProfitExceed = IsMaxPercentProfitExceed,
+                IsMaxTurnoverExceed = IsMaxTurnoverExceed,
+                IsMaxPercentTurnoverExceed = IsMaxPercentTurnoverExceed,
+                CapitalCurrencyCalc = CapitalCurrencyCalc,
+                CapitalCurrencyDisplay = CapitalCurrencyDisplay,
+                PLCurrencyDisplay = PLCurrencyDisplay,
+                TurnoverCurrencyDisplay = TurnoverCurrencyDisplay,
+                ClientEmail = ClientEmail,
+                AccessAuction = AccessAuction,
+                BsStopDeny = BsStopDeny,
+                GoCoeff = GoCoeff,
+                Retain = Retain,
+                MarginMin = MarginMin,
+                GroupId = GroupId
             };
+        }
     }
-}
+
+    /// <summary>
+    /// Группы клиентов
+    /// </summary>
+    public enum ClientGroup
+    {
+        /// <summary>
+        /// ММА
+        /// </summary>
+        MMA,
+
+        /// <summary>
+        /// ЗАО Финам
+        /// </summary>
+        ZAO
+    }
 }

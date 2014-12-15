@@ -15,7 +15,7 @@ namespace Risk
         /// <summary>
         /// ИД оповещения
         /// </summary>
-        public int AlertId { get; set; }
+        public Guid AlertId { get; set; }
 
         public string RuleType { get; set; }
         public string TradeCode { get; set; }

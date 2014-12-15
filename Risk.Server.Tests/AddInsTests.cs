@@ -43,9 +43,19 @@ namespace Risk.Tests
             }
 
 
-            public void Execute(Command command)
+            public object Execute(Command command)
             {
                 throw new NotImplementedException();
+            }
+
+            public void Configure(string configuration)
+            {
+                
+            }
+
+            public string GetConfiguration()
+            {
+                return null;
             }
         }
 

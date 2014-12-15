@@ -2,9 +2,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using NLog;
-using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Risk
 {
@@ -13,6 +10,22 @@ namespace Risk
     /// </summary>
     public class Connection : IConnection, ICloneable
     {
+        /// <summary>
+        /// Группы пользователей
+        /// </summary>
+        private enum UserGroup
+        {
+            /// <summary>
+            /// Admin
+            /// </summary>
+            Admin = 1,
+
+            /// <summary>
+            /// Dealer
+            /// </summary>
+            Dealer = 2
+        }
+
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
         protected IConnectionCallback _callback;
@@ -54,7 +67,7 @@ namespace Risk
                 {
                     ConnectionId = ConnectionId.ToString(),
                     ServerName = Server.Current.ServerName,
-                    ServerVersion = Server.Current.GetVersion(),
+                    ServerVersion = Server.Current.Version,
                     UserName = UserName,
                 };
         }
@@ -70,6 +83,48 @@ namespace Risk
             }
         }
 
+        /// <summary>
+        /// Проверка на принадлежность пользователя к группе админов
+        /// </summary>
+        /// <returns></returns>
+        public bool IsAdminUser()
+        {
+            // проверяем что текущий пользователь принадлежить админской группе
+            var userGroup = ServerBase.Current.ServerConfigurationSection.UsersToGroups[UserName.ToUpper()];
+            return userGroup != null && userGroup.GroupId == (int)UserGroup.Admin;
+        }
+
+        /// <summary>
+        /// Проверка на принадлежность пользователя к группе дилеров
+        /// </summary>
+        /// <returns></returns>
+        public bool IsDealerUser()
+        {
+            // проверяем что текущий пользователь принадлежить группе дилеров
+            var userGroup = ServerBase.Current.ServerConfigurationSection.UsersToGroups[UserName.ToUpper()];
+            return userGroup != null && (userGroup.GroupId == (int)UserGroup.Dealer || userGroup.GroupId == (int)UserGroup.Admin);
+        }
+
+        /// <summary>
+        /// Проверка на принадлежность пользователя к группе админов
+        /// </summary>
+        /// <returns></returns>
+        public void CheckAdminUser()
+        {
+            if (!IsAdminUser())
+                throw new Exception("Admin privileges required");
+        }
+
+        /// <summary>
+        /// Проверка на принадлежность пользователя к группе дилеров
+        /// </summary>
+        /// <returns></returns>
+        public void CheckDealerUser()
+        {
+            if (!IsDealerUser())
+                throw new Exception("Dealer privileges required");
+        }
+
         public void Trace(string message, params object[] args)
         {
             if (IsTrace)
@@ -80,23 +135,24 @@ namespace Risk
         {
             Trace("Start command '{0}' on server", command);
             log.Trace("Start Execute command {0}", command);
-            var result = Server.Current.Execute(command, this);
+            var serverCommand = Server.Current.CreateServerCommand(command, this);
+            var resultData = serverCommand.Execute();
             log.Trace("Stop Execute command {0}", command);
             Trace("Stop command '{0}' on server", command);
-            return new CommandResult { Data = result };
+            return new CommandResult { Data = resultData, FieldsInfo = serverCommand.FieldsInfo };
         }
 
         public void SendMessage(string message, MessageType messageType)
         {
-            if (Connected)
-                _callback.ReceiveMessage(message, messageType);
+            log.Trace("Start send message {0}: {1}", messageType, message);
+            Async(() => _callback.ReceiveMessage(message, messageType));
+            log.Trace("Stop send message {0}: {1}", messageType, message);
         }
 
         public void SendCommand(Command command)
         {
             log.Trace("Start send command {0}", command);
-            if (Connected)
-                _callback.ReceiveCommand(command);
+            Async(() => _callback.ReceiveCommand(command));
             log.Trace("Stop send command {0}", command);
         }
 
@@ -107,7 +163,7 @@ namespace Risk
                 {
                     try
                     {
-                        action();
+                        if (Connected) action();
                     }
                     catch (Exception ex)
                     {

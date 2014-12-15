@@ -7,7 +7,7 @@
     <ProjectGuid>{6267F6C6-14D1-4C53-8261-734E3E1F96AD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Risk</RootNamespace>
+    <RootNamespace>Finam.NativeConnect</RootNamespace>
     <AssemblyName>Risk.Common</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -44,11 +44,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandResult.cs" />
+    <Compile Include="CommandType.cs" />
     <Compile Include="ConnectionStringBuilder.cs" />
+    <Compile Include="FieldInfo.cs" />
+    <Compile Include="Models\AccountLimit.cs" />
+    <Compile Include="Models\AutoMarginCallInfo.cs" />
+    <Compile Include="Models\FinancialResultExtended.cs" />
+    <Compile Include="Models\FinancialResult.cs" />
     <Compile Include="MessageType.cs" />
     <Compile Include="Models\Alert.cs" />
     <Compile Include="Models\AlertInfo.cs" />
+    <Compile Include="Models\CheckInstrumentQuotesParameters.cs" />
+    <Compile Include="Models\CheckInstrumentQuotesResult.cs" />
     <Compile Include="Models\Client.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="MarshalConnectionCallback.cs" />
@@ -58,14 +65,21 @@
     <Compile Include="IConnectionCallback.cs" />
     <Compile Include="IServer.cs" />
     <Compile Include="HierarchyObject.cs" />
+    <Compile Include="Models\InstrumentGOInfo.cs" />
+    <Compile Include="Models\ETNAPosition.cs" />
     <Compile Include="Models\Instrument.cs" />
+    <Compile Include="Models\InstrumentGroup.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\Portfolio.cs" />
     <Compile Include="Models\Position.cs" />
     <Compile Include="Models\Rate.cs" />
+    <Compile Include="Models\ReconciliationPosition.cs" />
     <Compile Include="Models\RiskSettings.cs" />
     <Compile Include="Models\PortfolioRule.cs" />
-    <Compile Include="Models\PortfolioRuleInfo.cs" />
+    <Compile Include="Models\TestTableItem.cs" />
+    <Compile Include="CommandResult.cs" />
+    <Compile Include="Models\TestTableItemInfo.cs" />
+    <Compile Include="Models\UserAlert.cs" />
     <Compile Include="ServerConnectionInfo.cs" />
     <Compile Include="Models\Trade.cs" />
     <Compile Include="Parameter.cs" />

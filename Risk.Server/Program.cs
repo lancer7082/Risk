@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using Risk.Commands;
 
 namespace Risk
 {
@@ -59,11 +60,15 @@ namespace Risk
             }
         }
 
-        private static void StartNewStaThread() 
+        private static void StartNewStaThread(object argsObj)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FormDebug()); 
+            Application.ThreadException += (s, e) => MessageBox.Show(e.Exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+            var args = (string[])argsObj;
+            var mainForm = new FormDebug(ArgExists(args, "-safe"));
+            Application.Run(mainForm);
         }
 
         const string ServiceName = "FinamRiskServer";
@@ -77,7 +82,14 @@ namespace Risk
         {
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += (s, e) => { log.FatalException(String.Format("Unhandled exception: {0}", ((Exception)e.ExceptionObject).Message), e.ExceptionObject as Exception); LogManager.Flush(); };
+                Application.ThreadException += (s, e) =>
+                {
+                    log.FatalException(String.Format("Fatal exception: {0}", e.Exception.Message), e.Exception); LogManager.Flush();
+                };
+                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                {
+                    log.FatalException(String.Format("Unhandled exception: {0}", ((Exception)e.ExceptionObject).Message), e.ExceptionObject as Exception); LogManager.Flush();
+                };
                 Environment.CurrentDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 string instanceName = ArgValue(args, "-s", ServiceDefaultInstanceName);
 
@@ -141,9 +153,9 @@ namespace Risk
                     consoleMode = true;
                     AddLogConsole();
 
-                    Thread threadApplication = new Thread(new ThreadStart(StartNewStaThread));
+                    Thread threadApplication = new Thread(new ParameterizedThreadStart(StartNewStaThread));
                     threadApplication.SetApartmentState(ApartmentState.STA);
-                    threadApplication.Start();
+                    threadApplication.Start(args);
                 }
                 else
                 {

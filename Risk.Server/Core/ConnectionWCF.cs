@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 
@@ -41,7 +42,13 @@ namespace Risk
         {
             try
             {
-                return base.Execute(command);
+                var result = base.Execute(command);
+
+                // Check data type support WCF
+                if (result != null && result.Data != null && !result.Data.GetType().IsValueType && !Command.KnownTypes().Contains(result.Data.GetType()))
+                    throw new Exception(String.Format("WCF contract not supported result type '{0}'", result.Data.GetType().Name));
+
+                return result;
             }
             catch (Exception ex)
             {

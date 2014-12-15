@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Risk
 {
     [Serializable]
     [DataContract]
-    [KnownType(typeof(ServerObjectInfo))]
-    [KnownType(typeof(HierarchyObject[]))]   
     public class HierarchyObject
     {
         private HierarchyObject _parent;

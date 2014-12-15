@@ -11,7 +11,7 @@ namespace Risk
         where T : new()
     {
         public T Inserted { get; private set; }
-        public T Updated  { get; private set;}
+        public T Updated  { get; private set; }
         public T Deleted { get; private set; }
 
         public TriggerPair(T inserted, T deleted, PropertyInfo[] ignoreProperties = null)

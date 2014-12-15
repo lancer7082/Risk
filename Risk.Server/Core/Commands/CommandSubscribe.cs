@@ -14,15 +14,8 @@ namespace Risk
     {
         protected internal override void InternalExecute()
         {
-            if (Object == null)
-                throw new Exception("Object name is empty");
-
             Object.AddNotification(Connection, CorrelationId, Parameters);
-
-            SetResult(Object.GetData(Parameters));
-
-            // Notify all data
-            // NotifyChanges(notification, new NotificationData { NotificationType = NotificationType.Create, Data = GetData(parameters) });
+            base.InternalExecute();            
         }
     }
 }

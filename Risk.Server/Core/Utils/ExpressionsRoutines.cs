@@ -50,10 +50,57 @@ namespace Risk
             }
         }
 
+        public static Expression<Func<T, bool>> CreatePredicateParamsExpression<T>(ParameterCollection parameters, PropertyInfo[] properties)
+        {
+            Expression<Func<T, bool>> expression = null;
+
+            // Filter
+            string filter = (string)parameters["Filter"];
+            if (!String.IsNullOrWhiteSpace(filter))
+            {
+                expression = System.Linq.Dynamic.DynamicExpression.ParseLambda<T, bool>(filter);
+            }
+
+            // Field params
+            int paramIndex = 0;
+            ParameterExpression par = Expression.Parameter(typeof(T), "");
+            while (paramIndex < parameters.Count)
+            {
+                var parameter = parameters.GetParameter(paramIndex);
+                var property = properties.FirstOrDefault(x => String.Equals("[" + x.Name + "]", parameter.Name, StringComparison.InvariantCultureIgnoreCase));
+
+                if (property != null)
+                {
+                    Expression keyFieldValues = Expression.Property(par, property);
+                    Expression paramValue = Expression.Constant(parameter.Value);
+
+                    BinaryExpression comparison = Expression.Equal(keyFieldValues, paramValue);
+                    var paramExpression = Expression.Lambda<Func<T, bool>>(comparison, par);
+
+                    if (expression != null)
+                        expression = expression.And(paramExpression);
+                    else
+                        expression = paramExpression;
+                }
+                else if (parameter.Name.StartsWith("[") && parameter.Name.EndsWith("]"))
+                    throw new Exception(String.Format("Invalid field '{0}' in parameters for type '{1}'", parameter.Name, typeof(T).Name));
+                paramIndex++;
+            }
+            return expression ?? Expression.Lambda<Func<T, bool>>(Expression.Constant(true), par);
+        }
+
+        public static Expression<Func<T, bool>> CreatePredicateParamsExpression<T, TResult>(ParameterCollection parameters, PropertyInfo[] properties)
+        {
+            var par = Expression.Parameter(typeof(T), "");
+            var createMeth = typeof(ObjectHelpers).GetMethod("ConvertType");
+            var method = createMeth.MakeGenericMethod(typeof(T), typeof(TResult));
+            var fff = Expression.Call(method, par);
+            return Expression.Lambda<Func<T, bool>>(Expression.Invoke(CreatePredicateParamsExpression<TResult>(parameters, properties), fff), par);
+        }
+
         public static Expression<Func<T, bool>> And<T>(this Expression<Func<T, bool>> thisExpression, Expression<Func<T, bool>> expression)
         {
             return Expression.Lambda<Func<T, bool>>(Expression.AndAlso(Expression.Invoke(thisExpression, thisExpression.Parameters), Expression.Invoke(expression, thisExpression.Parameters)), thisExpression.Parameters);
         }
-
     }
 }

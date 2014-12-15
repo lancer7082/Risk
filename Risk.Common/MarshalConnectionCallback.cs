@@ -7,6 +7,7 @@ namespace Risk
     /// <summary>
     /// Маршаллинг контракта на произвольный класс
     /// </summary>
+    [Serializable]
     public class MarshalConnectionCallback : IConnectionCallback
     {
         private Type instanceType;

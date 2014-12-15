@@ -34,7 +34,7 @@ namespace Risk
         /// <summary>
         /// Код инструмента
         /// </summary>
-        public string SecСode { get; set; }
+        public string SecCode { get; set; }
 
         /// <summary>
         /// Кол-во в заявке
@@ -56,6 +56,30 @@ namespace Risk
         /// </summary>
         public bool MarginCall { get; set; }
 
+        /// <summary>
+        /// Название инструмента
+        /// </summary>
+        public string InstrumentName { get; set; }
+
+        /// <summary>
+        /// Код класса инструмента
+        /// </summary>
+        public string InstrumentClassCode { get; set; }
+
+        /// <summary>
+        /// Имя класса инструмента
+        /// </summary>
+        public string InstrumentClassName { get; set; }
+
+        /// <summary>
+        /// Продажа
+        /// </summary>
+        public bool Sell
+        {
+            get { return (int)OrderType > 0; }
+            set {}
+        }
+
         public object Clone()
         {
             return new Order
@@ -66,9 +90,12 @@ namespace Risk
                 OrderType = this.OrderType,
                 Price = this.Price,
                 Quantity = this.Quantity,
-                SecСode = this.SecСode,
+                SecCode = this.SecCode,
                 TradeCode = this.TradeCode,
                 MarginCall = this.MarginCall,
+                InstrumentName = InstrumentName,
+                InstrumentClassCode = InstrumentClassCode,
+                InstrumentClassName = InstrumentClassName
             };
         }
     }

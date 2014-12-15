@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using NLog;
 
 namespace Risk
@@ -17,6 +18,8 @@ namespace Risk
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
         private List<AddInInfo> _addIns = new List<AddInInfo>();
         private IServer server = new ServerProxy();
+
+        public bool AllStarted { get; private set; }
 
         public AddInProxy this[string addInTypeName]
         {
@@ -33,9 +36,13 @@ namespace Risk
         {
         }
 
-        public void Register(string addInTypeName, int resetTime = 0)
+        public void Register(string addInTypeName, int resetTime = 0, string configuration = null)
         {
-            var addInInfo = new AddInInfo(addInTypeName) { ResetTime = resetTime };
+            var addInInfo = new AddInInfo(addInTypeName)
+            {
+                ResetTime = resetTime,
+                Configuration = configuration
+            };
             _addIns.Add(addInInfo);
         }
 
@@ -55,7 +62,9 @@ namespace Risk
                 var addInProxy = (AddInProxy)domain.CreateInstanceAndUnwrap(typeof(AddInProxy).Assembly.FullName, typeof(AddInProxy).FullName);
                 addInInfo.Proxy = addInProxy;
                 addInInfo.Domain = domain;
-                addInProxy.Start(server, addInInfo.AddInTypeName);
+                addInProxy.CreateInstance(addInInfo.AddInTypeName);
+                addInProxy.Configure(addInInfo.Configuration);
+                addInProxy.Start(server);
                 addInInfo.Started = true;
                 if (addInInfo.ResetTime > 0)
                 {
@@ -94,16 +103,18 @@ namespace Risk
             }
         }
 
-        internal void Start()
+        internal void StartAll()
         {
+            AllStarted = true;
             foreach (var addInInfo in _addIns)
             {
                 Start(addInInfo);
             }
         }
 
-        internal void Stop()
+        internal void StopAll()
         {
+            AllStarted = false;
             foreach (var addInInfo in _addIns)
             {
                 if (addInInfo.Started)
@@ -131,6 +142,8 @@ namespace Risk
             public AppDomain Domain { get; set; }
             public int ResetTime { get; set; }
             public Timer TimerReset { get; set; }
+            public string Configuration { get; set; }
+
 
             public AddInInfo(string addInTypeName)
             {
@@ -150,7 +163,7 @@ namespace Risk
                 return null;
             }
 
-            public void Start(IServer server, string addInTypeName)
+            public void CreateInstance(string addInTypeName)
             {
                 Program.AddLogConsole();
                 this.addInTypeName = addInTypeName;
@@ -158,31 +171,53 @@ namespace Risk
                 if (addInType == null)
                     throw new Exception(String.Format("Not found AddIn type '{0}'", addInTypeName));
                 instance = (IAddIn)Activator.CreateInstance(addInType);
+            }
+
+            public void Start(IServer server)
+            {
                 instance.Start(server);
+                log.Info("AddIn {0} started", instance.Name());
             }
 
             public void Stop()
             {
                 if (instance != null)
                 {
+                    log.Info("AddIn {0} stopped", instance.Name());
                     instance.Stop();
                     instance = null;
                 }
             }
 
-            public void Execute(Command command)
+            public object Execute(Command command)
             {
-                instance.Execute(command);
+                return instance.Execute(command);
             }
 
             public override string ToString()
             {
                 return instance == null ? addInTypeName : String.Format("{0} {1}", instance.Name(), instance.Version());
             }
+
+            public void Configure(string configuration)
+            {
+                instance.Configure(configuration);
+            }
+
+            public string GetConfiguration()
+            {
+                return instance.GetConfiguration();
+            }
         }
 
         private class ServerProxy : MarshalByRefObject, IServer
         {
+            public override object InitializeLifetimeService()
+            {
+                // Делаем объект "вечным"
+                return null;
+            }
+
             public T Execute<T>(Command command)
             {
                 return (T)Execute(command);

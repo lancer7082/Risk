@@ -16,6 +16,7 @@ namespace Risk
         public Connection Connection { get; set; }
         public string CorrelationId { get; set; }
         public IDataObject Object { get; set; }
+        public FieldInfo[] FieldsInfo { get; set; }
         public object Data { get; set; }
 
         public ParameterCollection Parameters

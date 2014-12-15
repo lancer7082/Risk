@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading;
 using NLog;
 
@@ -16,35 +17,35 @@ namespace Risk
         where T : class, new()
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
-        private object updateLock = new object();
+        protected object updateLock = new object();
+        private List<T> _items = new List<T>();
         private IEnumerable<T> _cacheData;
         private IList<Expression<Func<T, object>>> _lookups;
         private Dictionary<string, ILookup<object, T>> _indexes;
 
-        private List<T> _items = new List<T>();
+        // Changes lists
+        protected List<T> ChangedInserted { get; private set; }
+        protected Dictionary<T, T> ChangedUpdated { get; private set; }
+        protected List<T> ChangedDeleted { get; private set; }
 
         protected IEnumerable<T> Items
         {
             get
             {
-                Interlocked.MemoryBarrier();
+                // TODO: ??? Interlocked.MemoryBarrier();
                 if (_cacheData == null)
                 {
-                    T[] newCache;
                     lock (updateLock)
                     {
-                        newCache = _items.Select(item => (T)item.CloneObject()).ToArray();
+                        _cacheData = _items.Select(item => (T)item.CloneObject()).ToArray();
                     }
-                    Interlocked.Exchange(ref _cacheData, newCache);
-                    return newCache;
                 }
-                else
-                    return _cacheData;
+                return _cacheData;
             }
         }
 
         public string KeyFieldNames { get; private set; }
-        
+
         protected PropertyInfo[] KeyFieldProperties { get; private set; }
         protected virtual Func<T, object> KeySelector { get; private set; }
 
@@ -57,18 +58,39 @@ namespace Risk
                 if (!String.IsNullOrWhiteSpace(keyFields))
                 {
                     KeyFieldNames = ((TableAttribute)attrs[0]).KeyFields;
-                    if (String.IsNullOrWhiteSpace(KeyFieldNames))
-                        throw new Exception(String.Format("KeyFields empty for Table '{0}'", Name));
-                    KeyFieldProperties = GetProperties(KeyFieldNames);
-                    KeySelector = ExpressionsRoutines.CreateSelectorExpression<T>(KeyFieldProperties);
                 }
             }
 
+            if (String.IsNullOrWhiteSpace(KeyFieldNames))
+                throw new Exception(String.Format("KeyFields empty for Table '{0}'", Name));
+
+            KeyFieldProperties = GetProperties(KeyFieldNames);
+            CheckFields<T>(KeyFieldProperties);
+            KeySelector = ExpressionsRoutines.CreateSelectorExpression<T>(KeyFieldProperties);
+
             if (KeySelector == null)
-              KeySelector = x => x;        
+                KeySelector = x => x;
 
             _lookups = new List<Expression<Func<T, object>>>();
             _indexes = new Dictionary<string, ILookup<object, T>>();
+
+            ChangedInserted = new List<T>();
+            ChangedUpdated = new Dictionary<T, T>();
+            ChangedDeleted = new List<T>();
+        }
+
+        public override FieldInfo[] GetFields(ParameterCollection parameters, PropertyInfo[] properties)
+        {
+            var fields = base.GetFields(parameters, properties);
+
+            if (String.IsNullOrWhiteSpace(KeyFieldNames))
+                return fields;
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                fields[i].IsKey = KeyFieldProperties.FirstOrDefault(p => p.Name == fields[i].FieldName) != null;
+            }
+            return fields;
         }
 
         /// <summary>
@@ -140,6 +162,7 @@ namespace Risk
                 return _items.Where(x => object.Equals(c(x), value));
             }
         }
+
         #endregion
 
         #region IEnumerator
@@ -159,7 +182,6 @@ namespace Risk
 
         protected override PropertyInfo[] GetUpdatedProperties()
         {
-            // TODO: !!!
             return base.GetUpdatedProperties().Except(KeyFieldProperties).ToArray();
         }
 
@@ -209,60 +231,86 @@ namespace Risk
             throw new Exception(String.Format("Data for table '{0}' unsupported type '{1}'", Name, dataType.Name));
         }
 
-        protected override IEnumerable<NotificationData> GetChanges()
+        protected override NotificationData<T> GetChanges()
         {
-            // TODO: !!! Only changes data
-            return new NotificationData[] { new NotificationData { NotificationType = NotificationType.Create, Data = Items } };
+            lock (updateLock)
+            {
+                if (ChangedDeleted.Count == 0 && ChangedUpdated.Count == 0 && ChangedInserted.Count == 0)
+                    return null;
+
+                var notificationData = new NotificationData<T>();
+                if (String.IsNullOrWhiteSpace(KeyFieldNames)) // If KeyFieldNames not exists, update all items
+                {
+                    notificationData.Created = Items.ToArray();
+                }
+                else
+                {
+                    if (ChangedDeleted.Count > 0)
+                        notificationData.Deleted = ChangedDeleted.ToArray();
+
+                    if (ChangedUpdated.Count > 0)
+                        notificationData.Updated = (from item in ChangedUpdated select new TriggerPair<T>(item.Key, item.Value)).ToArray();
+
+                    if (ChangedInserted.Count > 0)
+                        notificationData.Inserted = ChangedInserted.ToArray();
+                }
+
+                ChangedDeleted.Clear();
+                ChangedUpdated.Clear();
+                ChangedInserted.Clear();
+
+                return notificationData;
+            }
         }
 
-        protected override void NotifyChanges(Notification notification, NotificationData notificationData)
+        protected override void NotifyChanges<TResult>(Notification notification, NotificationData<TResult> notificationData)
         {
-            if (notificationData.Data is IEnumerable<T>)
+            if (notification.Predicate == null)
             {
-                if (notification.Predicate != null)
-                    notificationData.Data = ((IEnumerable<T>)notificationData.Data).Where((Func<T, bool>)notification.Predicate).ToArray();
-                else
-                    notificationData.Data = ((IEnumerable<T>)notificationData.Data).ToArray();
+                base.NotifyChanges(notification, notificationData);
             }
-            base.NotifyChanges(notification, notificationData);
+            else
+            {
+                var predicateFunc = (Func<TResult, bool>)notification.Predicate;
+
+                var insertedItems = notificationData.Inserted == null ? new List<TResult>() : notificationData.Inserted.Where(predicateFunc).ToList();
+                var deletedItems = notificationData.Deleted == null ? new List<TResult>() : notificationData.Deleted.Where(predicateFunc).ToList();
+                var updatedtems = new List<TriggerPair<TResult>>();
+
+                if (notificationData.Updated != null)
+                {
+
+                    insertedItems.AddRange(from item in notificationData.Updated
+                                           where !predicateFunc(item.Deleted)
+                                              && predicateFunc(item.Inserted)
+                                           select item.Inserted);
+
+                    deletedItems.AddRange(from item in notificationData.Updated
+                                          where predicateFunc(item.Deleted)
+                                             && !predicateFunc(item.Inserted)
+                                          select item.Deleted);
+
+                    updatedtems.AddRange(from item in notificationData.Updated
+                                         where predicateFunc(item.Deleted)
+                                            && predicateFunc(item.Inserted)
+                                         select item);
+                }
+
+                notificationData = new NotificationData<TResult>
+                {
+                    Inserted = insertedItems.ToArray(),
+                    Updated = updatedtems.ToArray(),
+                    Deleted = deletedItems.ToArray(),
+                };
+
+                if (!notificationData.IsEmpty)
+                    base.NotifyChanges(notification, notificationData);
+            }
         }
 
         protected override Expression<Func<T, bool>> Predicate(ParameterCollection parameters)
         {
-            Expression<Func<T, bool>> expression = null;
-
-            // Filter
-            string filter = (string)parameters["Filter"];
-            if (!String.IsNullOrWhiteSpace(filter))
-            {
-                expression = System.Linq.Dynamic.DynamicExpression.ParseLambda<T, bool>(filter);
-            }
-
-            // Field params
-            int paramIndex = 0;
-            ParameterExpression par = Expression.Parameter(typeof(T), "");
-            while (paramIndex < parameters.Count)
-            {
-                var parameter = parameters.GetParameter(paramIndex);
-                var property = Properties.FirstOrDefault(x => String.Equals("[" + x.Name + "]", parameter.Name, StringComparison.InvariantCultureIgnoreCase));
-
-                if (property != null)
-                {                    
-                    MemberExpression keyFieldValues = Expression.Property(par, property);
-                    ConstantExpression paramValue = Expression.Constant(parameter.Value);
-                    BinaryExpression comparison = Expression.Equal(keyFieldValues, paramValue);
-                    var paramExpression = Expression.Lambda<Func<T, bool>>(comparison, par);
-
-                    if (expression != null)
-                        expression = expression.And(paramExpression);
-                    else
-                        expression = paramExpression;
-                }
-                else if (parameter.Name.StartsWith("[") && parameter.Name.EndsWith("]"))
-                    throw new Exception(String.Format("Invalid field '{0}' in parameters for table '{1}'", parameter.Name, Name));
-                paramIndex++;
-            }
-            return expression ?? Expression.Lambda<Func<T, bool>>(Expression.Constant(true), par);
+            return ExpressionsRoutines.CreatePredicateParamsExpression<T>(parameters, Properties);
         }
 
         #endregion
@@ -274,8 +322,12 @@ namespace Risk
             if (items == null)
                 throw new Exception(String.Format("Add data for table '{0}' is empty", Name));
 
-            // Check constraint arguments
+            // execute LINQ
             items = items.ToArray();
+            if (!items.Any())
+                return;
+
+            // Check constraints
             var errorConstraintInput = (items.GroupBy(KeySelector)
                                       .Where(x => x.Count() > 1)
                                       .Select(x => x.FirstOrDefault())).FirstOrDefault();
@@ -288,7 +340,7 @@ namespace Risk
                 var updated = items.GroupJoin(_items, KeySelector, KeySelector, (i, g) => g // left join
                     .Select(d => new TriggerPair<T>(i, d))
                     .DefaultIfEmpty(new TriggerPair<T>(i, null)))
-                    .SelectMany(g => g).ToArray();
+                    .SelectMany(x => x).ToArray();
 
                 // Check constraints
                 var errorConstraint = updated.FirstOrDefault(p => p.Deleted != null);
@@ -297,8 +349,18 @@ namespace Risk
 
                 // TODO: ??? Before trigger
 
-                _items.AddRange(updated.Select(x => x.Updated));
+                var addItems = updated.Select(x => x.Updated);
+                _items.AddRange(addItems);
 
+                // Update changes lists
+                foreach (var item in updated)
+                {
+                    if (ChangedDeleted.Contains(item.Updated))
+                        ChangedDeleted.Remove(item.Updated);
+                    ChangedInserted.Add(item.Updated);
+                }
+
+                // Trigger after
                 if (updated.Length > 0)
                     TriggerAfter(new TriggerCollection<T>(updated));
 
@@ -310,6 +372,11 @@ namespace Risk
         {
             if (items == null)
                 throw new Exception(String.Format("Update data for table '{0}' is empty", Name));
+
+            // execute LINQ
+            items = items.ToArray();
+            if (!items.Any())
+                return;
 
             PropertyInfo[] properties;
             PropertyInfo[] cumulativeProperties;
@@ -327,7 +394,13 @@ namespace Risk
                 {
                     var item = updated[i];
 
-                    if (!UpdateInstance(item, properties, cumulativeProperties))
+                    if (UpdateInstance(item, properties, cumulativeProperties))
+                    {
+                        // Update changes lists
+                        if (!ChangedInserted.Contains(item.Updated) && !ChangedUpdated.ContainsKey(item.Updated))
+                            ChangedUpdated.Add(item.Updated, item.Deleted);
+                    }
+                    else
                         updated.RemoveAt(i);
                 }
 
@@ -342,7 +415,12 @@ namespace Risk
         {
             if (items == null)
                 throw new Exception(String.Format("Delete data for table '{0}' is empty", Name));
-            
+
+            // execute LINQ
+            items = items.ToArray();
+            if (!items.Any())
+                return;
+
             lock (updateLock)
             {
                 var updated = items.Join(_items, KeySelector, KeySelector, (i, d) => new TriggerPair<T>(null, d)).ToArray();
@@ -352,6 +430,13 @@ namespace Risk
                 foreach (var item in updated)
                 {
                     _items.Remove(item.Updated);
+
+                    // Update changes lists
+                    if (ChangedInserted.Contains(item.Updated))
+                        ChangedInserted.Remove(item.Updated);
+                    if (ChangedUpdated.ContainsKey(item.Updated))
+                        ChangedUpdated.Remove(item.Updated);
+                    ChangedDeleted.Add(item.Updated);
                 }
 
                 if (updated.Length > 0)
@@ -371,8 +456,12 @@ namespace Risk
             PropertyInfo[] ignoreProperties;
             UpdatedPropertiesFromNames(fieldNames, out properties, out cumulativeProperties, out ignoreProperties);
 
-            // Check constraint arguments
+            // execute LINQ
             items = items.ToArray();
+            if (!items.Any())
+                return;
+
+            // Check constraint arguments
             var errorConstraintInput = (items.GroupBy(KeySelector)
                                       .Where(x => x.Count() > 1)
                                       .Select(x => x.FirstOrDefault())).FirstOrDefault();
@@ -381,7 +470,7 @@ namespace Risk
                 throw new Exception(String.Format("Add data for table '{0}' duplicate key '{1}'. The duplicate key value is ({2})", Name, KeyFieldNames, errorConstraintInput.ToString(KeyFieldProperties)));
 
             var mergeSelector = String.IsNullOrWhiteSpace(keyFieldNames) ? KeySelector : ExpressionsRoutines.CreateSelectorExpression<T>(GetProperties(keyFieldNames));
-            
+
             lock (updateLock)
             {
                 IEnumerable<T> mergeItems;
@@ -412,15 +501,36 @@ namespace Risk
 
                     // Insert
                     if (item.Deleted == null)
+                    {
                         _items.Add(item.Updated);
 
+                        if (ChangedDeleted.Contains(item.Updated))
+                            ChangedDeleted.Remove(item.Updated);
+                        ChangedInserted.Add(item.Updated);
+                    }
                     // Delete
                     else if (item.Inserted == null)
+                    {
                         _items.Remove(item.Updated);
 
+                        // Update changes lists
+                        if (ChangedInserted.Contains(item.Updated))
+                            ChangedInserted.Remove(item.Updated);
+                        if (ChangedUpdated.ContainsKey(item.Updated))
+                            ChangedUpdated.Remove(item.Updated);
+                        ChangedDeleted.Add(item.Updated);
+                    }
                     // Update
                     else if (!UpdateInstance(item, properties, cumulativeProperties))
+                    {
                         updated.RemoveAt(i);
+                    }
+                    else
+                    {
+                        // Update changes lists
+                        if (!ChangedInserted.Contains(item.Updated) && !ChangedUpdated.ContainsKey(item.Updated))
+                            ChangedUpdated.Add(item.Updated, item.Deleted);
+                    }
                 }
 
                 if (updated.Count > 0)

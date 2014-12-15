@@ -18,6 +18,10 @@ namespace Risk
             if (Object == null)
                 throw new Exception("Object name is empty");
 
+            FieldsInfo = Object.GetFields(Parameters);
+            if (FieldsInfo.Length == 0)
+                throw new Exception(String.Format("Table {0} has no fields", Object.Name));
+
             SetResult(Object.GetData(Parameters));
         }
     }

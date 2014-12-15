@@ -5,6 +5,7 @@ using System.Threading;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Runtime.Serialization;
 
 namespace Risk
 {
@@ -50,11 +51,47 @@ namespace Risk
             }
         }
 
+        public virtual FieldInfo[] GetFields(ParameterCollection parameters)
+        {
+            if (Attribute.GetCustomAttribute(typeof(T), typeof(DataContractAttribute)) == null)
+                return GetFields(parameters, Properties);
+            else
+                return GetFields(parameters, Properties.Where(x => x.GetCustomAttribute(typeof(DataMemberAttribute)) != null).ToArray());
+        }
+
+        public virtual FieldInfo[] GetFields(ParameterCollection parameters, PropertyInfo[] properties)
+        {
+            var fields = new List<FieldInfo>();
+            foreach (var property in properties)
+            {
+                fields.Add(new FieldInfo
+                {
+                    FieldName = property.Name,
+                    ReadOnly = !property.CanWrite,
+                    DataType = FieldInfo.GetFieldTypeCode(property.PropertyType),
+                    // TODO: ??? Size
+                });
+            }
+            return fields.ToArray();
+        }
+
+        protected void CheckFields<TItem>(PropertyInfo[] properties)
+        {
+            // Check KeyFields if DataContract
+            if (Attribute.GetCustomAttribute(typeof(TItem), typeof(DataContractAttribute)) != null)
+            {
+                var errorProp = properties.FirstOrDefault(x => x.GetCustomAttribute(typeof(DataMemberAttribute)) == null);
+                if (errorProp != null)
+                    throw new Exception(String.Format("Key field property '{0}' table '{1}' has no attribute [DataMember], but class '{2}' has attrubute [DataContract]", errorProp.Name, Name, typeof(T).Name));
+            }
+            // TODO: Check string field !!! throw new Exception(String.Format("String key field '{0}' type '{1}' must be set StringLength attribute", prop.Name, "unknown"));
+        }
+
         public abstract object GetData(ParameterCollection parameters);
 
         public abstract void SetData(ParameterCollection parameters, object data);
 
-        protected virtual IEnumerable<NotificationData> GetChanges()
+        protected virtual NotificationData<T> GetChanges()
         {
             return null;
         }
@@ -136,11 +173,11 @@ namespace Risk
                 var fieldName = fieldStr.Trim();
 
                 if (fields.Contains(fieldName))
-                    throw new Exception(String.Format("Doublicate field name {0} in commnd for object '{1}'", fieldName, Name));
+                    throw new Exception(String.Format("Doublicate field name '{0}' object '{1}'", fieldName, Name));
 
                 var property = Properties.FirstOrDefault(p => p.Name == fieldName);
                 if (property == null)
-                    throw new Exception(String.Format("Invalid field '{0}' for object '{1}'", fieldName, Name));
+                    throw new Exception(String.Format("Invalid field '{0}' object '{1}'", fieldName, Name));
 
                 propertiesList.Add(property);
             }
@@ -250,7 +287,7 @@ namespace Risk
 
         #region Notification
 
-        public void AddNotification(Connection connection, string correlationId, ParameterCollection parameters)
+        public virtual void AddNotification(Connection connection, string correlationId, ParameterCollection parameters)
         {
             // Add notification
             var predicate = Predicate(parameters);
@@ -273,6 +310,11 @@ namespace Risk
 
         private void NotifyChanges()
         {
+            // Get changes
+            var changes = GetChanges();
+            if (changes == null || changes.IsEmpty)
+                return;
+            
             // Create notifications list
             var notifications = (from connection in Server.Connections
                                  from notification in connection.Notifications.Values
@@ -281,21 +323,25 @@ namespace Risk
             if (notifications.Count == 0)
                 return;
 
-            var changes = GetChanges();
-            if (changes == null || changes.Count() == 0)
-                return;
-
             // Notify
             foreach (var notification in notifications)
-                foreach (var change in changes)
-                {
-                    NotifyChanges(notification, change);
-                }
+                NotifyChanges(notification, changes);
         }
 
-        protected virtual void NotifyChanges(Notification notification, NotificationData notificationData)
+        protected virtual void NotifyChanges<TResult>(Notification notification, NotificationData<TResult> notificationData)
+            where TResult : class, new()
         {
-            notification.Notify(notificationData.NotificationType, notificationData.Data);
+            if (notificationData.Created != null && notificationData.Created.Length > 0)
+                notification.Notify(NotificationType.Create, notificationData.Created);
+
+            if (notificationData.Inserted != null && notificationData.Inserted.Length > 0)
+                notification.Notify(NotificationType.Insert, notificationData.Inserted);
+
+            if (notificationData.Updated != null && notificationData.Updated.Length > 0)
+                notification.Notify(NotificationType.Update, (from item in notificationData.Updated select item.Inserted).ToArray());
+
+            if (notificationData.Deleted != null && notificationData.Deleted.Length > 0)
+                notification.Notify(NotificationType.Delete, notificationData.Deleted);
         }
 
         #endregion  

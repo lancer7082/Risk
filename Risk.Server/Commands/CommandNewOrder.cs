@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Risk
+namespace Risk.Commands
 {
     /// <summary>
     ///  Команда закрытия позиции, вызываемая с клиента
@@ -14,6 +12,9 @@ namespace Risk
     {
         protected internal override void InternalExecute()
         {
+            if (Connection != null)
+                Connection.CheckDealerUser();
+
             if (!Parameters.Contains("TradeCode"))
                 throw new Exception("Не указан торговый код");
 
@@ -23,21 +24,21 @@ namespace Risk
             if (!Parameters.Contains("Quantity"))
                 throw new Exception("Не указано кол-во");
 
-            Order order = new Order();
-            order.TradeCode = Parameters["TradeCode"].ToString();
-            order.SecСode = Parameters["SecCode"].ToString();
-            order.Quantity = (int)Parameters["Quantity"];
-            order.Price = (decimal)((double)Parameters["Price"]);
-            order.OrderType = (OrderType)Parameters["OrderType"];
-            //// Если создано вруную с клиента,
-            //// то считаем подтвержденным
-            //order.OrderStatus = OrderStatus.Approved;
-            order.Date = Server.Current.ServerTime;
+            //// Если создано вручную с клиента, то считаем подтвержденным
+            var order = new Order
+            {
+                TradeCode = Parameters["TradeCode"].ToString(),
+                SecCode = Parameters["SecCode"].ToString(),
+                Quantity = (int)Parameters["Quantity"],
+                Price = (decimal)((double)Parameters["Price"]),
+                OrderType = (OrderType)Parameters["OrderType"],
+                Date = ServerBase.Current.ServerTime
+            };
 
             if (String.IsNullOrWhiteSpace(order.TradeCode))
                 throw new Exception("Не указан торговый код");
 
-            Server.Current.AddIns["Risk.Transaq.TransaqAddIn, Risk.Transaq"].Execute
+            ServerBase.Current.AddIns["Risk.Transaq.TransaqAddIn, Risk.Transaq"].Execute
                 (
                     new Command
                     {

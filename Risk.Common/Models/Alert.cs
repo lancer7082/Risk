@@ -13,11 +13,15 @@ namespace Risk
     [Serializable]
     public class Alert : ICloneable
     {
+        public Alert()
+        {
+            AlertId = Guid.NewGuid();
+        }
+
         /// <summary>
         /// ИД оповещения
         /// </summary>
-        //[DataMember]
-        public int AlertId { get; set; }
+        public Guid AlertId { get; set; }
 
         /// <summary>
         /// Портфолио
@@ -33,16 +37,30 @@ namespace Risk
         /// Способы оповещения клиента
         /// </summary>
         public NotifyType NotifyType { get; set; }
-        
+
         /// <summary>
         /// Текст оповещения
         /// </summary>
         public string Text { get; set; }
-        
+
         /// <summary>
         /// Дата / время оповещения
         /// </summary>
         public DateTime DateTime { get; set; }
+
+        /// <summary>
+        /// NotificationId
+        /// </summary>
+        public long NotificationId { get; set; }
+
+        /// <summary>
+        /// Тип сообщения (для передачи на клиента)
+        /// </summary>
+        public AlertType AlertType { get; set; }
+
+        // Значения для формы сделок по-прежнему берутся по порядку, т.к. колонки генерируются автоматически! 
+        // Добавлять новые поля можно только в конец.
+        // + В форме клиента необходимо обновить проверку количества колонок и назначить русское название
 
         public object Clone()
         {
@@ -54,6 +72,8 @@ namespace Risk
                 Text        = this.Text,
                 NotifyType  = this.NotifyType,
                 PortfolioRule = this.PortfolioRule,
+                NotificationId = NotificationId,
+                AlertType   = this.AlertType
             };
         }
 
@@ -61,11 +81,11 @@ namespace Risk
         {
             return new AlertInfo
             {
-                AlertId     = alert.AlertId,
-                RuleType    = (alert.PortfolioRule != null) ? alert.PortfolioRule.RuleType.ToString() : RuleType.None.ToString(),
-                TradeCode   = (alert.Portfolio != null) ? alert.Portfolio.TradeCode : "",
-                Text        = alert.Text,
-                DateTime    = alert.DateTime,
+                AlertId = alert.AlertId,
+                RuleType = (alert.PortfolioRule != null) ? alert.PortfolioRule.RuleType.ToString() : RuleType.None.ToString(),
+                TradeCode = (alert.Portfolio != null) ? alert.Portfolio.TradeCode : "",
+                Text = alert.Text,
+                DateTime = alert.DateTime,
                 NotifyTypes = (alert.NotifyType == NotifyType.None) ? "" : alert.NotifyType.ToString(),
             };
         }

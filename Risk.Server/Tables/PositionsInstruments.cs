@@ -9,8 +9,17 @@ namespace Risk
     [Table("PositionsInstruments", KeyFields = "SecCode")]
     public class PositionsInstruments : Table<Position>
     {
+        #region Overrides of Table<Position>
+
+        /// <summary>
+        ///  Trigger on Add, Update, Delete
+        /// </summary>
         public override void TriggerAfter(TriggerCollection<Position> items)
         {
+            base.TriggerAfter(items);
+            Positions.SetInstrumentData(items);
         }
+
+        #endregion
     }
 }

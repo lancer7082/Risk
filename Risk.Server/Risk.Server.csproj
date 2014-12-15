@@ -36,6 +36,10 @@
     <StartupObject>Risk.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Finam.Configuration, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\External\Finam.Configuration.dll</HintPath>
+    </Reference>
     <Reference Include="NLog">
       <HintPath>..\External\NLog.dll</HintPath>
     </Reference>
@@ -48,6 +52,7 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -57,8 +62,35 @@
     <Reference Include="System.Xml.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoMarginCall.cs" />
+    <Compile Include="CheckInstrumentsQuotes.cs" />
+    <Compile Include="ClientOrders.cs" />
     <Compile Include="Commands\CommandClosePositionsByAccount.cs" />
+    <Compile Include="Commands\CommandChangeTradersAccountParameters.cs" />
+    <Compile Include="Commands\CommandChangeInstrumentsParameters.cs" />
+    <Compile Include="Commands\CommandLoadFinancialResults.cs" />
+    <Compile Include="Commands\CommandGetPortfolio.cs" />
+    <Compile Include="Commands\CommandAutoMarginCallClose.cs" />
+    <Compile Include="Commands\CommandAccountLimits.cs" />
+    <Compile Include="Configuration\AddinConfigurationElement.cs" />
+    <Compile Include="Configuration\AddinConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\AuthenticationConfigurationElement.cs" />
+    <Compile Include="Configuration\AuthenticationConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\UserToGroupsConfigurationElement.cs" />
+    <Compile Include="Configuration\UsersToGroupsConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\JobConfiguration\BaseJobConfigurationElement.cs" />
+    <Compile Include="Configuration\JobConfiguration\BaseJobConfigurationElementCollection.cs" />
+    <Compile Include="Configuration\JobConfiguration\DataBaseJobConfigurationElement.cs" />
+    <Compile Include="Configuration\JobConfiguration\DelegateJobConfigurationElement.cs" />
+    <Compile Include="Configuration\JobConfiguration\JobConfigurationSection.cs" />
+    <Compile Include="Configuration\JobConfiguration\JobTypesConfigurationElement.cs" />
+    <Compile Include="Configuration\RiskServerSection.cs" />
+    <Compile Include="Configuration\ServerConfigurationElement.cs" />
+    <Compile Include="Commands\CommandAlert.cs" />
+    <Compile Include="Core\Commands\CommandCreateUser.cs" />
+    <Compile Include="Core\Commands\CommandUserInGroup.cs" />
     <Compile Include="Core\Commands\CommandMail.cs" />
+    <Compile Include="Commands\CommandReconciliation.cs" />
     <Compile Include="Core\Commands\CommandServerObjects.cs" />
     <Compile Include="Core\AddIns.cs" />
     <Compile Include="Core\Commands\CommandAttribute.cs" />
@@ -73,11 +105,25 @@
     <Compile Include="Core\Commands\CommandUnsubscribe.cs" />
     <Compile Include="Core\Commands\CommandUpdate.cs" />
     <Compile Include="Commands\CommandNewOrder.cs" />
+    <Compile Include="Commands\CommandSaveConfigurationToConfig.cs" />
+    <Compile Include="Core\Commands\CommandChangeUserPassword.cs" />
+    <Compile Include="Commands\CommandLoadNewSessionData.cs" />
+    <Compile Include="Core\Commands\CommandCheckUserCredentials.cs" />
     <Compile Include="Core\IDataObject.cs" />
     <Compile Include="Core\ITable.cs" />
     <Compile Include="Core\NotificationData.cs" />
     <Compile Include="Core\NotificationType.cs" />
     <Compile Include="Core\TableResult.cs" />
+    <Compile Include="Core\TableResultAttribute.cs" />
+    <Compile Include="Jobs\DataBaseJob.cs" />
+    <Compile Include="Jobs\JobBase.cs" />
+    <Compile Include="Jobs\JobManager.cs" />
+    <Compile Include="PasswordHash.cs" />
+    <Compile Include="Tables\AutoMarginCallInfos.cs" />
+    <Compile Include="Tables\AccountsLimits.cs" />
+    <Compile Include="Tables\FinancialResults.cs" />
+    <Compile Include="Tables\InstrumentGroups.cs" />
+    <Compile Include="Tables\InstrumentsGOInfo.cs" />
     <Compile Include="Tables\RiskSettingsView.cs" />
     <Compile Include="Core\Utils\LinqDynamic.cs" />
     <Compile Include="Core\Utils\AssemblyHelpers.cs" />
@@ -122,6 +168,7 @@
     <Compile Include="Tables\Positions.cs" />
     <Compile Include="Tables\PositionsInstruments.cs" />
     <Compile Include="Tables\PortfolioRules.cs" />
+    <Compile Include="Tables\TestTable.cs" />
     <Compile Include="Tables\Trades.cs" />
     <Compile Include="Core\TriggerCollection.cs" />
     <Compile Include="Core\TriggerPair.cs" />
@@ -130,7 +177,12 @@
     <Compile Include="Core\DataObjectView.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="ClassDiagram.cd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="FormDebug.resx">

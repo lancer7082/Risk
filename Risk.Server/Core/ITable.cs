@@ -9,6 +9,8 @@ namespace Risk
 {
     public interface ITable : IDataObject
     {
+        string KeyFieldNames { get; }
+
         void Insert(object data);
         void Update(object data, string fieldNames);
         void Delete(object data);

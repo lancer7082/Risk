@@ -1,0 +1,500 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="Risk.CommandClosePositionsByAccount" Collapsed="true">
+    <Position X="0.5" Y="9" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Commands\CommandClosePositionsByAccount.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandNewOrder" Collapsed="true">
+    <Position X="3.5" Y="9" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Commands\CommandNewOrder.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandNotifyClientTransaq" Collapsed="true">
+    <Position X="3" Y="7.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIAAAAAM=</HashCode>
+      <FileName>Commands\CommandNotifyClientTransaq.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.AddIns" Collapsed="true">
+    <Position X="22.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAACAAACABAAAABAAAAIAAAAAAAAAI=</HashCode>
+      <FileName>Core\AddIns.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandAttribute" Collapsed="true">
+    <Position X="28.5" Y="2" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Commands\CommandAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandDelete" Collapsed="true">
+    <Position X="9.25" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandDelete.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandInsert" Collapsed="true">
+    <Position X="11.5" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandInsert.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandSendMail" Collapsed="true">
+    <Position X="7.75" Y="9" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAcAIABKCAAAAAIAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandMail.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandMerge" Collapsed="true">
+    <Position X="13.75" Y="12.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandMerge.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandMessage" Collapsed="true">
+    <Position X="0.5" Y="7.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandMessage.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandSelect" Collapsed="true">
+    <Position X="7" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandSelect.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandServer" Collapsed="true">
+    <Position X="8.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAiAAAUgBAgAAAAAAAAAABAABIAAAAICAEI=</HashCode>
+      <FileName>Core\Commands\CommandServer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandServerObjects" Collapsed="true">
+    <Position X="5.5" Y="7.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandServerObjects.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandSubscribe" Collapsed="true">
+    <Position X="7" Y="12.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandSubscribe.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandTable" Collapsed="true">
+    <Position X="10.25" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Commands\CommandTable.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.CommandUpdate" Collapsed="true">
+    <Position X="13.75" Y="11.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAI=</HashCode>
+      <FileName>Core\Commands\CommandUpdate.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Connection" Collapsed="true">
+    <Position X="23.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAABAAAAgYAQgACIACIAAKAAAABASSQAAAAAAABA=</HashCode>
+      <FileName>Core\Connection.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Risk.Connections" Collapsed="true">
+    <Position X="5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAAAAAAAAAAAAACAAAAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Connections.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ConnectionWCF" Collapsed="true">
+    <Position X="23.25" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQAAAAAAIAAAAAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>Core\ConnectionWCF.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.DataObjectAttribute" Collapsed="true">
+    <Position X="26.25" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAIAAAAAAA=</HashCode>
+      <FileName>Core\DataObjectAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.DataObjectBase&lt;T&gt;" Collapsed="true">
+    <Position X="8.25" Y="0.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAACAABEFAAEAAEAAAgAgQIAAIAAgAMgIQAAAACAAQ=</HashCode>
+      <FileName>Core\DataObjectBase.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Risk.DataObjectView&lt;T&gt;" Collapsed="true">
+    <Position X="10.25" Y="1.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABFAAAAAAAgAAAAAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\DataObjectView.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Notification" Collapsed="true">
+    <Position X="15.75" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAFCAAAEAAAAACAAAAAAAAABAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Notification.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ServerBase" Collapsed="true">
+    <Position X="17.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAgAAALAEAASAZYDECADAAAkBICAAJqAAADCCAEA=</HashCode>
+      <FileName>Core\ServerBase.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Risk.Table&lt;T&gt;" Collapsed="true">
+    <Position X="6.25" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ICZgAEABEEAACBAggAAEDgAIABNQAQAIAAAAABBASCA=</HashCode>
+      <FileName>Core\Table.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="Risk.TableAttribute" Collapsed="true">
+    <Position X="26.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\TableAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Table&lt;T, TResult&gt;" Collapsed="true">
+    <Position X="2.75" Y="3.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\TableResult.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.TriggerCollection&lt;T&gt;" Collapsed="true">
+    <Position X="19.5" Y="8.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIAAAAAAAAEAAAAAAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>Core\TriggerCollection.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.TriggerPair&lt;T&gt;" Collapsed="true">
+    <Position X="19.5" Y="9.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAIAAAEAAAAEAAAAAAAAAAAQAAAAAAAAAQ=</HashCode>
+      <FileName>Core\TriggerPair.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.AssemblyHelpers" Collapsed="true">
+    <Position X="17.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAQACAIQAAIAAAAAAAAAAAAAAAAAAAABAAAAA=</HashCode>
+      <FileName>Core\Utils\AssemblyHelpers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.EnumerableHelpers" Collapsed="true">
+    <Position X="17.25" Y="3.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\EnumerableHelpers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ExpressionsRoutines" Collapsed="true">
+    <Position X="17.25" Y="5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>IIAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\ExpressionsRoutines.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ObjectHelpers" Collapsed="true">
+    <Position X="17.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAUAAAAAAAAAAAAAAAAAABAAAgAAAA=</HashCode>
+      <FileName>Core\Utils\ObjectHelpers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.StringHelpers" Collapsed="true">
+    <Position X="17.25" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\StringHelpers.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.DataBase" Collapsed="true">
+    <Position X="22.5" Y="6" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AhAAAQACBAAAgAAAAAAACAAAAAAAAAAEwAAAogAAAAA=</HashCode>
+      <FileName>DataBase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.FormDebug" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="19.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AACAAAAAACAAAAAAAACACAACAAAYAAAAEGABAAABBAI=</HashCode>
+      <FileName>FormDebug.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="Risk.MoneyInOut" Collapsed="true">
+    <Position X="22.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAgAAAAAACgAAAAAAAAAAAAAABAA=</HashCode>
+      <FileName>Models\MoneyInOut.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.SessionInitialData" Collapsed="true">
+    <Position X="20" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAAAAAAgABAAAAAAAAAAAABAAAAAAABAA=</HashCode>
+      <FileName>Models\SessionInitialData.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Program" Collapsed="true">
+    <Position X="19.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAgABAAAAAAAACAAAEAAKAAAAAIAAAAAAAAgBAAABAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Server" Collapsed="true">
+    <Position X="17.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAMFQgACAAAAABAgACBAAAAQAAAAAAIKgAAAAQAAQAI=</HashCode>
+      <FileName>Server.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Service" Collapsed="true">
+    <Position X="20" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAEACACAACAAAAAAAAAEAAAAAAAAI=</HashCode>
+      <FileName>Service.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ServerServiceInstaller" Collapsed="true">
+    <Position X="20" Y="5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAEAEAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ServiceInstaller.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Alerts" Collapsed="true">
+    <Position X="0.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Alerts.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Clients" Collapsed="true">
+    <Position X="7.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Clients.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.ExchangeRates" Collapsed="true">
+    <Position X="7.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\ExchangeRates.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Instruments" Collapsed="true">
+    <Position X="11.25" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Instruments.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Orders" Collapsed="true">
+    <Position X="9.5" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Orders.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.PortfolioRules" Collapsed="true">
+    <Position X="3" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\PortfolioRules.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Portfolios" Collapsed="true">
+    <Position X="11.25" Y="4.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABAAAAAABAAAAAAAAAIAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Portfolios.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Positions" Collapsed="true">
+    <Position X="9.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAABAAEAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\Positions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.PositionsInstruments" Collapsed="true">
+    <Position X="7" Y="5.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\PositionsInstruments.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.RiskSettingsView" Collapsed="true">
+    <Position X="13" Y="2" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Tables\RiskSettingsView.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Trades" Collapsed="true">
+    <Position X="9.5" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAAAAIAAAAAAAAAACAAAAA=</HashCode>
+      <FileName>Tables\Trades.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Commands.Common.CommandDataObject&lt;T&gt;" Collapsed="true">
+    <Position X="5.5" Y="9" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Commands\CommandDataObject.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Risk.Commands.CommandUnsubscribe" Collapsed="true">
+    <Position X="8.25" Y="7.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAI=</HashCode>
+      <FileName>Core\Commands\CommandUnsubscribe.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.DynamicQueryable" Collapsed="true">
+    <Position X="30" Y="5.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>IIAAAACAAAAAAAAAAAAAAAQAAAEAAAAAAAEAQAAAEAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.DynamicClass" Collapsed="true">
+    <Position X="26.5" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.DynamicProperty" Collapsed="true">
+    <Position X="28.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAFAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.DynamicExpression" Collapsed="true">
+    <Position X="28.25" Y="4.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAAAAAAAAAQCAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.DynamicOrdering" Collapsed="true">
+    <Position X="26.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.Signature" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="30.25" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAoAAAAAAAAAAAAAgAAAAAAAAAAAAIAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="System.Linq.Dynamic.ClassFactory" Collapsed="true">
+    <Position X="26.5" Y="6.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIIAAAAAAAAABACAQAAAAAACAAAAASAAAAAABAAg=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.ParseException" Collapsed="true">
+    <Position X="28.25" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAkAAAAIAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.ExpressionParser" Collapsed="true">
+    <Position X="26.5" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>Co+4gUICBFAhMm7UoEgTE7BCIIzYpCqIKkUKBAmRAYI=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="System.Linq.Dynamic.Res" Collapsed="true">
+    <Position X="30.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CAgMKhAIAgAAgEAgCIBSSAQAFDAgABEACoACAgLAA8A=</HashCode>
+      <FileName>Core\Utils\LinqDynamic.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Struct Name="Risk.NotificationData" Collapsed="true">
+    <Position X="17.5" Y="8.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\NotificationData.cs</FileName>
+    </TypeIdentifier>
+  </Struct>
+  <Interface Name="Risk.IDataObject" Collapsed="true">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABEBAAAAAAAAAAAAQAAAAAAgAAgIQAAAAAAAA=</HashCode>
+      <FileName>Core\IDataObject.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="Risk.ITable" Collapsed="true">
+    <Position X="0.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAEAAAAAAAAAAAAAAAAAAAAEAAQAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\ITable.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="Risk.NotificationType" Collapsed="true">
+    <Position X="17.5" Y="9" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAEAAAAAAAAAAAAAAAAAAAAEAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\NotificationType.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="Risk.TriggerAction" Collapsed="true">
+    <Position X="17.5" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAEAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Core\TriggerPair.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
