@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="AutoMarginCall.cs" />
     <Compile Include="CheckInstrumentsQuotes.cs" />
+    <Compile Include="CheckScalperTrades.cs" />
     <Compile Include="ClientOrders.cs" />
     <Compile Include="Commands\CommandClosePositionsByAccount.cs" />
     <Compile Include="Commands\CommandChangeTradersAccountParameters.cs" />
@@ -72,6 +73,7 @@
     <Compile Include="Commands\CommandGetPortfolio.cs" />
     <Compile Include="Commands\CommandAutoMarginCallClose.cs" />
     <Compile Include="Commands\CommandAccountLimits.cs" />
+    <Compile Include="Commands\CommandRestartJob.cs" />
     <Compile Include="Configuration\AddinConfigurationElement.cs" />
     <Compile Include="Configuration\AddinConfigurationElementCollection.cs" />
     <Compile Include="Configuration\AuthenticationConfigurationElement.cs" />
@@ -109,12 +111,14 @@
     <Compile Include="Core\Commands\CommandChangeUserPassword.cs" />
     <Compile Include="Commands\CommandLoadNewSessionData.cs" />
     <Compile Include="Core\Commands\CommandCheckUserCredentials.cs" />
+    <Compile Include="Core\Commands\CommandGetUserGroup.cs" />
     <Compile Include="Core\IDataObject.cs" />
     <Compile Include="Core\ITable.cs" />
     <Compile Include="Core\NotificationData.cs" />
     <Compile Include="Core\NotificationType.cs" />
     <Compile Include="Core\TableResult.cs" />
     <Compile Include="Core\TableResultAttribute.cs" />
+    <Compile Include="IODailyMonitoring.cs" />
     <Compile Include="Jobs\DataBaseJob.cs" />
     <Compile Include="Jobs\JobBase.cs" />
     <Compile Include="Jobs\JobManager.cs" />

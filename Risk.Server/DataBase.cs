@@ -164,6 +164,39 @@ namespace Risk
             return (int)(result.ReturnValue);
         }
 
+
+        /// <summary>
+        /// Загрузка поручений
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[LoadScalper]")]
+        public IEnumerable<ScalpersData> LoadScalper([Parameter(Name = "TradeCode", DbType = "varchar(max)")]string tradeCode)
+        {
+            IExecuteResult result = this.ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), tradeCode);
+            return ((IEnumerable<ScalpersData>)(result.ReturnValue));
+        }
+
+        /// <summary>
+        /// Сохранение оповещения в БД
+        /// </summary>
+        /// <returns></returns>
+        [Function(Name = "[Risk].[SaveScalper]")]
+        private int SaveScalper(
+            [Parameter(Name = "Id", DbType = "BIGINT")]out long id,
+            [Parameter(Name = "AccountId", DbType = "INT")]int accountId,
+            [Parameter(Name = "TradeCode", DbType = "VARCHAR(MAX)")]string tradeCode,
+            [Parameter(Name = "BuyOrderId", DbType = "BIGINT")]long buyOrderId,
+            [Parameter(Name = "SellOrderId", DbType = "BIGINT")]long sellOrderId,
+            [Parameter(Name = "InstrumentCode", DbType = "VARCHAR(MAX)")]string instrumentCode,
+            [Parameter(Name = "UpdateDate", DbType = "DATETIME")]DateTime updateDate)
+        {
+            id = 0;
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), id, accountId,
+                tradeCode, buyOrderId, sellOrderId, instrumentCode, updateDate);
+            id = (long)(result.GetParameterValue(0));
+            return (int)(result.ReturnValue);
+        }
+
         /// <summary>
         /// Загрузка оповещений
         /// </summary>
@@ -184,9 +217,10 @@ namespace Risk
         [Function(Name = "[Risk].[LoadTrades]")]
         public IEnumerable<Trade> LoadTrades(
             [Parameter(Name = "DateFrom", DbType = "DATETIME")]DateTime dateFrom,
-            [Parameter(Name = "DateTo", DbType = "DATETIME")]DateTime dateTo)
+            [Parameter(Name = "DateTo", DbType = "DATETIME")]DateTime dateTo,
+            [Parameter(Name = "Scalper", DbType = "BIT")]bool scalper = false)
         {
-            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), dateFrom, dateTo);
+            var result = ExecuteMethodCall(this, ((MethodInfo)(MethodInfo.GetCurrentMethod())), dateFrom, dateTo, scalper);
             return (IEnumerable<Trade>)result.ReturnValue;
         }
 
@@ -404,6 +438,14 @@ namespace Risk
                 notification.MessageText, notification.UpdateDate);
             return id;
         }
+
+        public long SaveScalperData(ScalpersData data)
+        {
+            long id;
+
+            SaveScalper(out id, data.AccountId, data.TradeCode, data.BuyOrderId, data.SellOrderId, data.InstrumentCode, data.UpdateDate);
+            return id;
+        }
     }
 
     /// <summary>
@@ -450,6 +492,17 @@ namespace Risk
         /// <summary>
         /// Дата опповещения
         /// </summary>
+        public DateTime UpdateDate { get; set; }
+    }
+
+    public class ScalpersData
+    {
+        public long Id { get; set; }
+        public int AccountId { get; set; }
+        public string TradeCode { get; set; }
+        public long BuyOrderId { get; set; }
+        public long SellOrderId { get; set; }
+        public string InstrumentCode { get; set; }
         public DateTime UpdateDate { get; set; }
     }
 }

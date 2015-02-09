@@ -54,7 +54,7 @@ namespace Risk
         {
             // берем все портфели с маржинколом
             var portfolios = Server.Portfolios.Where(p => p.MarginCall).ToList();
-            
+
             if (!portfolios.Any())
             {
                 ClearAutoMarginCallsInfo();
@@ -117,54 +117,7 @@ namespace Risk
                 }.ExecuteAsync();
                 LogMarginCallInfo(autoMarginCallInfos);
 
-
-                //FMD-1626 Уведомление наличии позиций к закрытию (MarginCall)
-                // Отправка сообщения на клиента
-                var position = autoMarginCallInfos.OrderByDescending(t => t.UpdateTime).First();
-                if (position != null)
-                {
-                    //int alertInterval = Server.Settings.MarginCallAlertInterval <= 0 : 0 ;
-                    bool canAlert = (
-                            (count == 0) ||
-                            (_lastAlertTime == null) ||
-                            (Server.Settings.MarginCallAlertInterval <= 0) ||
-                            ((DateTime.Now - _lastAlertTime).TotalSeconds >= Server.Settings.MarginCallAlertInterval)
-                        ) ? true : false;
-
-                    if (canAlert)
-                    {
-                        AlertType alertType;
-                        string text = "";
-
-                        if (count == 0) //Если список позиций к закрытию был пуст
-                        {
-                            alertType = AlertType.NewPositionInMarginCall;
-                            text = String.Format("Новая позиция к закрытию в списке Margin Calls): TradeCode = {0} SecCode = {1}",
-                                position.TradeCode, position.InstrumentCode);
-                        }
-                        else //в списке позиций к закрытию уже были записи
-                        {
-                            alertType = AlertType.RemindAboutPositionInMarginCall;
-                            text = String.Format("Есть позиции к закрытию в списке Margin Calls): TradeCode = {0}, SecCode = {1}",
-                                position.TradeCode, position.InstrumentCode);
-                        }
-
-                        var alert = new Alert
-                        {
-                            DateTime = DateTime.Now,
-                            Text = text,
-                            AlertType = alertType
-                        };
-
-                        new CommandInsert
-                        {
-                            Object = Server.Alerts,
-                            Data = alert,
-                        }.ExecuteAsync();
-
-                        _lastAlertTime = DateTime.Now;
-                    }
-                }
+                CheckMarginCallReminder(autoMarginCallInfos, count);
             }
             else  // Нужно очистить таблицу, чтобы там не остались старые записи
             {
@@ -172,6 +125,59 @@ namespace Risk
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="autoMarginCallInfos"></param>
+        /// <param name="count"></param>
+        private static void CheckMarginCallReminder(List<AutoMarginCallInfo> autoMarginCallInfos, int count)
+        {
+            //FMD-1626 Уведомление наличии позиций к закрытию (MarginCall)
+            // Отправка сообщения на клиента
+            var position = autoMarginCallInfos.OrderByDescending(t => t.UpdateTime).First();
+            if (position == null)
+                return;
+
+            //int alertInterval = Server.Settings.MarginCallAlertInterval <= 0 : 0 ;
+            var canAlert = (
+                (count == 0) ||
+                (Server.Settings.MarginCallAlertInterval <= 0)
+                || ((DateTime.Now - _lastAlertTime).TotalSeconds >= Server.Settings.MarginCallAlertInterval));
+
+            if (!canAlert)
+                return;
+
+            AlertType alertType;
+            string text;
+
+            if (count == 0) //Если список позиций к закрытию был пуст
+            {
+                alertType = AlertType.NewPositionInMarginCall;
+                text = String.Format("Новая позиция к закрытию в списке Margin Calls): TradeCode = {0} SecCode = {1}",
+                    position.TradeCode, position.InstrumentCode);
+            }
+            else //в списке позиций к закрытию уже были записи
+            {
+                alertType = AlertType.RemindAboutPositionInMarginCall;
+                text = String.Format("Есть позиции к закрытию в списке Margin Calls): TradeCode = {0}, SecCode = {1}",
+                    position.TradeCode, position.InstrumentCode);
+            }
+
+            var alert = new Alert
+            {
+                DateTime = DateTime.Now,
+                Text = text,
+                AlertType = alertType
+            };
+
+            new CommandInsert
+            {
+                Object = Server.Alerts,
+                Data = alert,
+            }.Execute();
+
+            _lastAlertTime = DateTime.Now;
+        }
 
 
         /// <summary>
@@ -213,6 +219,9 @@ namespace Risk
             // получаем все позиции по портфелю
             var positions = positionsList.Where(s => s.AccountId == portfolio.AccountId).ToList();
             if (!positions.Any())
+                return;
+
+            if (ArePositionsAlreadyClosed(portfolio.TradeCode))
                 return;
 
             // проверить ставки ГО по всем инструментам в портфеле
@@ -259,7 +268,7 @@ namespace Risk
                 // если портфель отрицательный, то нужно закрывать все позиции
                 if (portfolio.UtilizationFact < 0)
                 {
-                    //CloseClientPosition(portfolio, position, portfolioRules, autoMarginCallInfo);
+                    CloseClientPosition(portfolio, position, portfolioRules, autoMarginCallInfo);
                     continue;
                 }
 
@@ -318,6 +327,27 @@ namespace Risk
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tradeCode"></param>
+        /// <returns></returns>
+        private static bool ArePositionsAlreadyClosed(string tradeCode)
+        {
+            // если такой записи еще нет в поручениях
+            var closedPositionsOrder = Server.Orders.Where(s => s.TradeCode == tradeCode && s.MarginCall).OrderByDescending(s => s.Date).FirstOrDefault();
+            if (closedPositionsOrder == null)
+                return false;
+
+            // если уже прошло достаточно времени, то можно закрывать
+            if ((DateTime.Now - closedPositionsOrder.Date).TotalSeconds >= Server.Settings.MarginCallClosingPositionsInterval)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Закрыть позицию в портфеле полностью
         /// </summary>
         /// <param name="portfolio"></param>
@@ -329,17 +359,8 @@ namespace Risk
             List<PortfolioRule> portfolioRules,
             AutoMarginCallInfo autoMarginCallInfo)
         {
-            if (portfolioRules.All(s => s.Portfolio != portfolio))
-            {
-                // Отправка оповещения пользователю
-                portfolioRules.Add(new PortfolioRule
-                {
-                    RuleType = RuleType.MaxPercentUtilMarginCallExceed,
-                    Portfolio = portfolio,
-                    RuleTime = ServerBase.Current.ServerTime,
-                });
-
-            }
+            if (position.Balance == 0)
+                return;
 
             Log.Info("Closing negative client portfolio {0} {1} quantity {2}", portfolio.TradeCode, position.SecCode, Math.Abs(position.Balance));
 
@@ -350,6 +371,18 @@ namespace Risk
             catch (Exception e)
             {
                 Log.ErrorException("Unable to close position", e);
+                return;
+            }
+
+            if (portfolioRules.All(s => s.Portfolio != portfolio))
+            {
+                // Отправка оповещения пользователю
+                portfolioRules.Add(new PortfolioRule
+                {
+                    RuleType = RuleType.MaxPercentUtilMarginCallExceed,
+                    Portfolio = portfolio,
+                    RuleTime = ServerBase.Current.ServerTime,
+                });
             }
 
             autoMarginCallInfo.PositionBalance = position.Balance;

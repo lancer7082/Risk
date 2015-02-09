@@ -246,7 +246,7 @@ namespace Risk
                 return items.ToArray();
 
             // загружаем сделки из БД
-            var trades = ServerBase.Current.DataBase.LoadTrades(dateFrom, dateTo).ToList();
+            var trades = ServerBase.Current.DataBase.LoadTrades(dateFrom, dateTo, true).ToList();
 
             // применяем предикат, если он заполнен
             var predicate = Predicate(parameters);
@@ -291,14 +291,26 @@ namespace Risk
             if (items == null)
                 return;
 
-            foreach (var item in items)
+            items = items.ToList();
+
+            var instrumentCodes = items.Select(s => s.SecCode).ToList();
+            instrumentCodes = instrumentCodes.Distinct().ToList();
+
+            var instruments = Server.Instruments.ToList(); // выполняем запрос - там монитор
+            instruments = instruments.Where(s => instrumentCodes.Contains(s.SecCode)).ToList();  // выполняем запрос
+
+            foreach (var itemGroup in items.GroupBy(s => s.SecCode))
             {
-                var instrument = Server.Instruments.FirstOrDefault(s => s.SecCode == item.SecCode);
+                var instrument = instruments.FirstOrDefault(s => s.SecCode == itemGroup.Key);
                 if (instrument == null)
                     continue;
-                item.InstrumentName = instrument.Name;
-                item.InstrumentClassCode = instrument.ClassCode;
-                item.InstrumentClassName = instrument.ClassName;
+
+                foreach (var item in itemGroup)
+                {
+                    item.InstrumentName = instrument.Name;
+                    item.InstrumentClassCode = instrument.ClassCode;
+                    item.InstrumentClassName = instrument.ClassName;
+                }
             }
         }
 

@@ -55,15 +55,22 @@ namespace Risk.Commands
         /// <returns></returns>
         private AccountLimit GetUSALimits()
         {
-            var serviceName = "TransaqAPI";
-            var targetTradeCode = "US00120";
-            var hostName = (Server.Current as Server).TransaqUsaHostName;
+            var portfolios = new PortfolioLimits();
+            try
+            {
+                var serviceName = "TransaqAPI";
+                var targetTradeCode = "US00120";
+                var hostName = (Server.Current as Server).TransaqUsaHostName;
 
-            var endpoint = new ServiceEndpoint(ContractDescription.GetContract(typeof(IServiceTransaq)),
-                               new BasicHttpBinding(BasicHttpSecurityMode.None),
-                               new EndpointAddress(new Uri(new Uri(hostName), serviceName)));
-            var client = new ChannelFactory<IServiceTransaq>(endpoint).CreateChannel();
-            var portfolios = client.GetPortfolioLimits(targetTradeCode);
+                var endpoint = new ServiceEndpoint(ContractDescription.GetContract(typeof(IServiceTransaq)),
+                    new BasicHttpBinding(BasicHttpSecurityMode.None),
+                    new EndpointAddress(new Uri(new Uri(hostName), serviceName)));
+                var client = new ChannelFactory<IServiceTransaq>(endpoint).CreateChannel();
+                portfolios = client.GetPortfolioLimits(targetTradeCode);
+            }
+            catch (Exception)
+            {
+            }
 
             return new AccountLimit
             {
@@ -74,6 +81,7 @@ namespace Risk.Commands
                 Limit = portfolios.Limit,
                 Free = portfolios.FreeMoney
             };
+
         }
 
         /// <summary>
@@ -101,8 +109,8 @@ namespace Risk.Commands
                 Currency = "RUR",
                 DateTime = DateTime.Now,
                 GO = result.Sum(s => s.GoPos),
-                Limit = 20000000,
-                Free = 20000000 - result.Sum(s => s.GoPos)
+                Limit = 30000000,
+                Free = 30000000 - result.Sum(s => s.GoPos)
             };
         }
 
@@ -131,9 +139,9 @@ namespace Risk.Commands
                 Market = "MICEX",
                 Currency = "RUR",
                 DateTime = DateTime.Now,
-                GO = data.I_Means,
+                GO = data.Means,
                 Limit = 750000000,
-                Free = data.I_Means + 750000000
+                Free = data.Means + 750000000
             };
         }
 
@@ -142,7 +150,7 @@ namespace Risk.Commands
         /// </summary>
         private class MicexData
         {
-            public decimal I_Means { get; set; }
+            public decimal Means { get; set; }
         }
 
         [ServiceContract(Name = "TransaqAPI", Namespace = "")]
@@ -157,7 +165,7 @@ namespace Risk.Commands
             [OperationContract(Action = "GetBalanceFut", Name = "GetBalanceFut")]
             List<Portfolio> GetBalanceFut(string TradeCodes, bool ErrorIfNotExist = false);
 
-            [OperationContract(Action = "GetPortfolioLimits", Name = "GetPortfolioLimits")]
+            [OperationContract(Action = "GetPortfolioLimits", Name = "Portfolios")]  //Name = "GetPortfolioLimits"
             PortfolioLimits GetPortfolioLimits(string TradeCodes, bool ErrorIfNotExist = false);
         }
 

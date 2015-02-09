@@ -22,10 +22,10 @@
             ServerBase.Current.JobManager.RestartJob("LoadInstrumentsJob");
             ServerBase.Current.JobManager.RestartJob("GetInstrumentGroups");
             ServerBase.Current.JobManager.RestartJob("UpdateFinancialResultsJob");
-            ServerBase.Current.JobManager.RestartJob("LoadInstrumentsGOInfo");
             ServerBase.Current.JobManager.RestartJob("UpdateExchangeRatesJob");
             ServerBase.Current.JobManager.RestartJob("UpdatePortfoliosJob");
             ServerBase.Current.JobManager.RestartJob("UpdatePortfoliosMoneyInOutDayJob");
+            ServerBase.Current.JobManager.RestartJob("UpdatePortfoliosFinResJob");
         }
         #endregion
     }

@@ -108,6 +108,10 @@ namespace Risk
 
         private readonly CheckInstrumentsQuotes _checkInstrumentsQuotes = new CheckInstrumentsQuotes();
 
+        private readonly IODailyMonitoring _IODailyMonitoring = new IODailyMonitoring();
+
+        private readonly CheckScalperTrades _checkScalperTrades = new CheckScalperTrades();
+
         /// <summary>
         /// Загрузка конфигурации
         /// </summary>
@@ -166,7 +170,9 @@ namespace Risk
             InitWCFConnection();
 
             _checkInstrumentsQuotes.Start();
+            _IODailyMonitoring.Start();
             _autoMarginCall.Start(AutoMarginCallInterval);
+            _checkScalperTrades.Start();
 
             ThreadPool.QueueUserWorkItem(state =>
             {
@@ -177,28 +183,29 @@ namespace Risk
                 }
             });
 
+            ServerBase.Current.JobManager.RestartJob("LoadInstrumentsGOInfo");
 
-            ThreadPool.QueueUserWorkItem(state =>
-            {
-                Thread.Sleep(10 * 1000);
-                while (true)
-                {
-                    var alert = new Alert
-                    {
-                        DateTime = DateTime.Now,
-                        Text = "Test",
-                        AlertType = AlertType.NewPositionInMarginCall
-                    };
+            //ThreadPool.QueueUserWorkItem(state =>
+            //{
+            //    Thread.Sleep(10 * 1000);
+            //    while (true)
+            //    {
+            //        var alert = new Alert
+            //        {
+            //            DateTime = DateTime.Now,
+            //            Text = "Test",
+            //            AlertType = AlertType.NewPositionInMarginCall
+            //        };
 
-                    new CommandInsert
-                    {
-                        Object = Server.Alerts,
-                        Data = alert,
-                    }.Execute();
+            //        new CommandInsert
+            //        {
+            //            Object = Server.Alerts,
+            //            Data = alert,
+            //        }.Execute();
 
-                    Thread.Sleep(10 * 1000);
-                }
-            });
+            //        Thread.Sleep(10 * 1000);
+            //    }
+            //});
 
 
             //ThreadPool.QueueUserWorkItem(state =>
@@ -206,13 +213,13 @@ namespace Risk
             //    Thread.Sleep(2 * 60 * 1000);
             //    while (true)
             //    {
-            //        var cmd = new CommandAutoMarginCallClose();
+            //        var cmd = new CommandRestartJob();
             //        cmd.Parameters = new ParameterCollection
             //        {
             //            new Parameter
             //            {
-            //                Name = "TradeCode",
-            //                Value = "MCE1026"
+            //                Name = "JobName",
+            //                Value = "LoadInstrumentsGOInfo"
             //            }
             //        };
             //        cmd.Execute();

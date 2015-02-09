@@ -31,11 +31,14 @@ namespace Risk.Commands
 
             if (Parameters["TradeCode"] == null)
                 throw new Exception(String.Format("Ошибка  в параметрах"));
+
+            // торговый код
+            var tradeCode = Parameters["TradeCode"].ToString();
+
+            if (IsPositionsAlreadyClosed(tradeCode))
+                throw new Exception("Установлена задержка на данный тип операции " + tradeCode);
             try
             {
-                // торговый код
-                var tradeCode = Parameters["TradeCode"].ToString();
-
                 var marginCalls = Server.AutoMarginCallInfos.Where(s => s.TradeCode == tradeCode).ToList();
 
                 ClientOrders.CancelActiveClientOrders(tradeCode, 2000);
@@ -66,9 +69,30 @@ namespace Risk.Commands
             }
             catch (Exception e)
             {
-                LogManager.GetCurrentClassLogger().Error("CommandAutoMarginCallClose exception: " + e);
+                LogManager.GetCurrentClassLogger().Error("{0} CommandAutoMarginCallClose exception: " + e, tradeCode);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tradeCode"></param>
+        /// <returns></returns>
+        private static bool IsPositionsAlreadyClosed(string tradeCode)
+        {
+            // если такой записи еще нет в поручениях
+            var closedPositionsOrder = Server.Orders.Where(s => s.TradeCode == tradeCode && s.MarginCall).OrderByDescending(s => s.Date).FirstOrDefault();
+            if (closedPositionsOrder == null)
+                return false;
+
+            // если уже прошло достаточно времени, то можно закрывать
+            if ((DateTime.Now - closedPositionsOrder.Date).TotalSeconds >= Server.Settings.MarginCallClosingPositionsInterval)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>

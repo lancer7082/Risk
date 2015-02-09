@@ -29,8 +29,15 @@ namespace Risk.Commands
             {
                 DateTime dateFrom, dateTo;
 
-                // получаем даты
-                Alerts.GetDatesParameters(Parameters, out dateFrom, out dateTo);
+                if (Parameters["DateBegin"] == null && Parameters["DateEnd"] == null)
+                {
+                    dateFrom = dateTo = DateTime.Now.AddDays(-1).Date;
+                }
+                else
+                {
+                    // получаем даты
+                    Alerts.GetDatesParameters(Parameters, out dateFrom, out dateTo);
+                }
 
                 // загружаем финрез
                 var finRes = ServerBase.Current.DataBase.LoadFinancialResults(

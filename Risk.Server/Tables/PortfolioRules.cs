@@ -30,7 +30,7 @@ namespace Risk
             // выбираем только те правила, по которым либо еще не было создано ни одного алерта
             // либо последний алерт был отправлен больше чем _equalAlertsSendingPeriod назад.
             foreach (var ruleItem in from p in items.Updated
-                                     where (p.LastAlert == null) ||
+                                     where (p.LastAlert == null) || p.AlwaysSend ||
                                      ((p.LastAlert != null) && (p.RuleTime - p.LastAlert.DateTime >= _equalAlertsSendingPeriod))
                                      select p)
             {
@@ -86,6 +86,16 @@ namespace Risk
                     {
                         alert.Text = "Некорректная ставка ГО";
                         alert.NotifyType = NotifyType.None;
+                    }
+                    else if (ruleItem.RuleType == RuleType.IODailyMonitoring)
+                    {
+                        alert.Text = "Превышение ввода-вывода денежных средств";
+                        alert.NotifyType = NotifyType.Email;
+                    }
+                    else if (ruleItem.RuleType == RuleType.ScalperTrade)
+                    {
+                        alert.Text = "Обнаружена скальперская сделка";
+                        alert.NotifyType = NotifyType.Email;
                     }
                     else
                     {

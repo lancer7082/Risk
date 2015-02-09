@@ -175,6 +175,10 @@ namespace Risk
         /// </summary>
         public decimal PositionCost { get; set; }
 
+        public string Client { get; set; }
+
+        public string PortfolioCurrency { get; set; }
+
         /// <summary>
         /// ICloneable
         /// </summary>
@@ -212,7 +216,9 @@ namespace Risk
                 GORateLong = GORateLong,
                 GORateShort = GORateShort,
                 InstrumentGORate = InstrumentGORate,
-                PositionCost = PositionCost
+                PositionCost = PositionCost,
+                Client = Client,
+                PortfolioCurrency = PortfolioCurrency
             };
         }
     }

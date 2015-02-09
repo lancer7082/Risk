@@ -60,7 +60,7 @@ namespace Risk
                                             TurnoverCurrencyDisplay = g.CumulativeSum(x => x.TurnoverCurrencyDisplay),
                                             TurnoverQuantity = g.CumulativeSum(x => x.TurnoverQuantity),
                                             FinResCurrencyDisplay = CalculateInstrumentFinResCurrencyDisplay(g.Key.SecCode),
-                                            PositionCost = g.CumulativeSum(x => ConvertPositionCostToInstrumentCurrency(g.Key.SecurityCurrency, x.TradeCode, x.PositionCost))
+                                            PositionCost = g.CumulativeSum(x => ConvertPositionCostToInstrumentCurrency(g.Key.SecurityCurrency, x.PortfolioCurrency, x.PositionCost))
                                         }).ToList();
 
             if (positionsInstruments.Count > 0)
@@ -79,16 +79,12 @@ namespace Risk
         /// Конвертация стоимости позиции в валюту инструмента
         /// </summary>
         /// <param name="securityCurrency"></param>
-        /// <param name="tradeCode"></param>
+        /// <param name="portfolioCurrency"></param>
         /// <param name="positionCost"></param>
         /// <returns></returns>
-        private static decimal ConvertPositionCostToInstrumentCurrency(string securityCurrency, string tradeCode, decimal positionCost)
+        private static decimal ConvertPositionCostToInstrumentCurrency(string securityCurrency, string portfolioCurrency, decimal positionCost)
         {
-            var portfolio = Server.Portfolios.SingleOrDefault(s => s.TradeCode == tradeCode);
-            if (portfolio == null)
-                return 0;
-
-            var rate = Server.ExchangeRates.FirstOrDefault(s => s.CurrencyFrom == portfolio.Currency && s.CurrencyTo == securityCurrency);
+            var rate = Server.ExchangeRates.FirstOrDefault(s => s.CurrencyFrom == portfolioCurrency && s.CurrencyTo == securityCurrency);
             if (rate == null)
                 return 0;
             return positionCost * rate.Value;
@@ -102,7 +98,7 @@ namespace Risk
         private static decimal CalculateInstrumentFinResCurrencyDisplay(string instumentCode)
         {
             // группируем по коду инструмента
-            var groupedFinRes = Server.FinancialResults.GroupBy(s => s.SecCode).SingleOrDefault(d => d.Key == instumentCode);
+            var groupedFinRes = Server.FinancialResults.GroupBy(s => s.SecCode).FirstOrDefault(d => d.Key == instumentCode);
 
             // и возвращаем сумму финансового результата
             return groupedFinRes != null ? groupedFinRes.Sum(s => s.FinResCurrencyDisplay) : 0;
@@ -151,11 +147,15 @@ namespace Risk
             }
         }
 
-        public static void ApplyRates(IEnumerable<Rate> rates, IEnumerable<Portfolio> portfolios, IEnumerable<Position> items = null)
+        public static void ApplyRates(IEnumerable<Rate> rates, IEnumerable<Portfolio> portfolios, IEnumerable<Position> items)
         {
-            foreach (var port in from p in items
-                                 join pf in portfolios on p.TradeCode equals pf.TradeCode
-                                 join r in rates on new { CurrencyFrom = pf.Currency, CurrencyTo = Server.Settings.CurrencyCalc } equals new { r.CurrencyFrom, r.CurrencyTo } into ps
+            var itemList = items.ToList();
+            var portfolioList = portfolios.ToList();
+            var rateList = rates.ToList();
+
+            foreach (var port in from p in itemList
+                                 join pf in portfolioList on p.TradeCode equals pf.TradeCode
+                                 join r in rateList on new { CurrencyFrom = pf.Currency, CurrencyTo = Server.Settings.CurrencyCalc } equals new { r.CurrencyFrom, r.CurrencyTo } into ps
                                  from r in ps.DefaultIfEmpty()
                                  select new { Position = p, Currency = pf.Currency, Rate = r })
             {
@@ -171,9 +171,9 @@ namespace Risk
                 }
             }
 
-            foreach (var port in from p in items
-                                 join pf in portfolios on p.TradeCode equals pf.TradeCode
-                                 join r in rates on new { CurrencyFrom = pf.Currency, CurrencyTo = Server.Settings.CurrencyDisplay }
+            foreach (var port in from p in itemList
+                                 join pf in portfolioList on p.TradeCode equals pf.TradeCode
+                                 join r in rateList on new { CurrencyFrom = pf.Currency, CurrencyTo = Server.Settings.CurrencyDisplay }
                                  equals new { r.CurrencyFrom, r.CurrencyTo } into ps
                                  from r in ps.DefaultIfEmpty()
                                  select new { Position = p, Currency = pf.Currency, Rate = r })

@@ -76,6 +76,17 @@ namespace Risk
         /// </summary>
         public string TraderLogin { get; set; }
 
+        /// <summary>
+        /// Скальперская сделка
+        /// </summary>
+        public bool IsScalper { get; set; }
+
+        public string TradeTypeStr
+        {
+            get { return Sell ? "Sell" : "Buy"; }
+            set {}
+        }
+
         // Значения для формы сделок по-прежнему берутся по порядку, т.к. колонки генерируются автоматически! 
         // Добавлять новые поля можно только в конец.
         // + В форме клиента необходимо обновить проверку количества колонок и назначить русское название
@@ -106,6 +117,7 @@ namespace Risk
                 InstrumentName = InstrumentName,
                 ValueCalcInPortfolioCurrency = ValueCalcInPortfolioCurrency,
                 TraderLogin = TraderLogin,
+                IsScalper = IsScalper
             };
         }
     }

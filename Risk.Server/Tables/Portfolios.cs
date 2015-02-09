@@ -14,7 +14,7 @@ namespace Risk
         /// <summary>
         /// Список портфелей по которым не устанавливается признак маржин-колла
         /// </summary>
-        private static readonly List<string> WithoutMarginCallPortfolios = new List<string>
+        public static readonly List<string> ContragentTradeCodes = new List<string>
         {
             "MCE0002",
             "MCR0002",
@@ -195,7 +195,7 @@ namespace Risk
         private static void CheckPortfolioMarginCall(Portfolio portfolio, List<PortfolioRule> rules)
         {
             // не проверяем эти портфели
-            if (WithoutMarginCallPortfolios.Contains(portfolio.TradeCode))
+            if (ContragentTradeCodes.Contains(portfolio.TradeCode))
                 return;
 
             // определяем тип портфеля и вызываем соответсвующий метод определения маржинкола

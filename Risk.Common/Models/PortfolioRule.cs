@@ -48,7 +48,14 @@ namespace Risk
         /// <summary>
         /// Отсутсвуют рыночные данные по инструменту
         /// </summary>
-        NoInstrumentsQuotes
+        NoInstrumentsQuotes,
+
+        /// <summary>
+        /// Мониторинг внутредневных вводов/выводов
+        /// </summary>
+        IODailyMonitoring,
+
+        ScalperTrade
     }
 
     [Serializable]
@@ -136,6 +143,12 @@ namespace Risk
         public NotifyType NotifyTypesAccomplished { get; set; }
 
         /// <summary>
+        /// Всегда отправлять алерт, без анализа его времени устаревания
+        /// </summary>
+        [IgnoreDataMember]
+        public bool AlwaysSend { get; set; }
+
+        /// <summary>
         /// ICloneable
         /// </summary>
         /// <returns></returns>
@@ -150,7 +163,8 @@ namespace Risk
                 NotifyTypesAccomplished = NotifyTypesAccomplished,
                 LastAlertText = LastAlertText,
                 LastAlertTime = LastAlertTime,
-                TradeCode = TradeCode
+                TradeCode = TradeCode,
+                AlwaysSend = AlwaysSend
             };
         }
     }

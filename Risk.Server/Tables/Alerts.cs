@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net.Mail;
 using System.Text;
 using Risk.Commands;
 
@@ -59,7 +60,7 @@ namespace Risk
                             if (alert.PortfolioRule != null)
                             {
                                 // Ставим признак, что сообщение в терминал уже послано
-                              //  alert.PortfolioRule.NotifyTypesAccomplished |= NotifyType.Terminal;
+                                //  alert.PortfolioRule.NotifyTypesAccomplished |= NotifyType.Terminal;
                             }
                         }
 
@@ -80,7 +81,7 @@ namespace Risk
                     // Оповещение пользователя
                     new CommandAlert
                     {
-                        AlertType =  alert.AlertType,
+                        AlertType = alert.AlertType,
                         Message = message,
                     }.ExecuteAsync();
 
@@ -156,8 +157,7 @@ namespace Risk
 
             return items.ToArray();
         }
-
-
+        
         protected override Expression<Func<AlertInfo, bool>> PredicateResult(ParameterCollection parameters)
         {
             var predicate = base.PredicateResult(parameters);
@@ -204,16 +204,18 @@ namespace Risk
             new CommandSendMail
             {
 #if DEBUG
-                From = "<Risk (Test)> <24_support@corp.whotrades.eu>",
-                To = "turyansky@corp.finam.ru;khayrullin@corp.finam.ru;ayukulikov@corp.finam.ru;dssmirnov@corp.finam.ru",
+                From = "<Risk (Test)><risktest@corp.finam.ru>",
+                To = "turyansky@corp.finam.ru;khayrullin@corp.finam.ru;ayukulikov@corp.finam.ru;dssmirnov@corp.finam.ru", 
                 Subject = subject,
 #else
                 From = "<Risk> <24_support@corp.whotrades.eu>",
                 To = recipients + ";turyansky@corp.finam.ru;khayrullin@corp.finam.ru",
                 Subject = subject,
+                
 #endif
                 Body = body,
-                IsBodyHtml = true
+                IsBodyHtml = true,
+                Priority = alert.PortfolioRule.RuleType == RuleType.IODailyMonitoring ? MailPriority.High : MailPriority.Normal
             }.ExecuteAsync();
 
             if (alert.PortfolioRule != null)
@@ -238,6 +240,10 @@ namespace Risk
             {
                 return "dssmirnov@corp.finam.ru;moiseev_a@corp.finam.ru";
             }
+            else if (alert.PortfolioRule.RuleType == RuleType.IODailyMonitoring)
+            {
+                return Server.Settings.IODailyMonitoringRecipients;
+            }
             return "dssmirnov@corp.finam.ru;moiseev_a@corp.finam.ru";
         }
 
@@ -248,15 +254,15 @@ namespace Risk
         /// <returns></returns>
         private static string MakeMessageSubject(Alert alert)
         {
-            if (alert.PortfolioRule.RuleType == RuleType.MaxPercentUtilWarningExceed)
+            if (alert.PortfolioRule.RuleType == RuleType.IODailyMonitoring)
             {
-                return "WhoTrades. Извещение о превышении использования капитала по счету MMA";
+                return @"RISK MMA: Вводы \ Выводы ДС";
             }
-            else if (alert.PortfolioRule.RuleType == RuleType.MaxPercentUtilMarginCallExceed)
+            else if (alert.PortfolioRule.RuleType == RuleType.ScalperTrade)
             {
-                return "WhoTrades. Извещение о закрытии позиции по счету MMA";
+                return "Risk MMA. New scalp trade";
             }
-            return "WhoTrades. Оповещение о наступлении события";
+            return "WhoTrades. MMA account notification";
         }
 
         /// <summary>
@@ -273,18 +279,25 @@ namespace Risk
 
             if (alert.PortfolioRule.RuleType == RuleType.MaxPercentUtilWarningExceed)
             {
-                stringBuilder.AppendFormat("Добрый день, {0}! {1}", alert.Portfolio.Client, "</br>");
-                stringBuilder.AppendFormat("{0:dd.MM.yyyy} {1:HH:mm:ss} Уровень обеспечения открытых позиций {2} равно {4:.##}%. {3}",
-                                  alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode, "</br>", alert.Portfolio.CoverageFact);
-
-                stringBuilder.AppendFormat("При снижении обеспечения открытых позиций ниже 50% мы будем вынуждены закрыть позиции до 100% обеспечения {0}", "</br>");
+                stringBuilder.AppendFormat("Уважаемый клиент!</br>");
+                stringBuilder.AppendFormat("{0:dd.MM.yyyy} в {1:HH:mm:ss} (UTC+3) уровень обеспечения открытых позиций по счету {2} равен {4:.##}%.                                                 {3}", alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode,
+                                            "</br>", alert.Portfolio.CoverageFact);
+                stringBuilder.AppendFormat("При снижении обеспечения открытых позиций ниже 50% мы будем вынуждены закрыть позиции до 100%                                                       обеспечения. {0}", "</br>");
+                stringBuilder.AppendFormat("-------------------------------------------------------</br>");
+                stringBuilder.AppendFormat("Dear Client!</br>");
+                stringBuilder.AppendFormat("{0:dd.MM.yyyy} at {1:HH:mm:ss} (UTC+3) pre-depositing level of open positions (account {2}) equals {4:.##}%.                                                 {3}", alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode,
+                                            "</br>", alert.Portfolio.CoverageFact);
+                stringBuilder.AppendFormat("If pre-depositing level goes down below 50% we will have to close positions till 100% level. {0}", "</br>");
             }
             else if (alert.PortfolioRule.RuleType == RuleType.MaxPercentUtilMarginCallExceed)
             {
-                stringBuilder.AppendFormat("Добрый день, {0}! {1}", alert.Portfolio.Client, "</br>");
-                stringBuilder.AppendFormat("{0:dd.MM.yyyy} в {1:HH:mm:ss} Ваши позиции по счету {2} были частично закрыты в связи с недостаточным обеспечением. {3}",
-                                  alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode, "</br>");
+                stringBuilder.AppendFormat("Уважаемый клиент!</br>");
+                stringBuilder.AppendFormat("{0:dd.MM.yyyy} в {1:HH:mm:ss} (UTC+3) Ваши позиции по счету {2} были частично закрыты в связи с недостаточным обеспечением. {3}", alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode, "</br>");
                 stringBuilder.AppendFormat("Уровень обеспечения открытых позиций снизился ниже 50%. {0}", "</br>");
+                stringBuilder.AppendFormat("-------------------------------------------------------</br>");
+                stringBuilder.AppendFormat("Dear Client!</br>");
+                stringBuilder.AppendFormat("{0:dd.MM.yyyy} at {1:HH:mm:ss} (UTC+3) your trading positions (account {2}) were partially closed due to insufficient pre-depositing. {3}", alert.PortfolioRule.RuleTime, alert.PortfolioRule.RuleTime, alert.Portfolio.TradeCode, "</br>");
+                stringBuilder.AppendFormat("Pre-depositing level of open positions went down below 50%.{0}", "</br>");
             }
             else if (alert.PortfolioRule.RuleType == RuleType.IncorrectGORate)
             {
@@ -295,7 +308,90 @@ namespace Risk
                 stringBuilder.AppendFormat("Размер капитала равен {0:.##} {1} {2}", alert.Portfolio.Capital, alert.Portfolio.Currency, "</br>");
                 stringBuilder.AppendFormat("Уровень использования капитала равен {0:.##}% {1}", alert.Portfolio.UtilizationFact, "</br>");
             }
+            else if (alert.PortfolioRule.RuleType == RuleType.IODailyMonitoring)
+            {
+                MakeIOMonitoringMessageBody(alert, stringBuilder);
+            }
+            else if (alert.PortfolioRule.RuleType == RuleType.ScalperTrade)
+            {
+                MakeScalperTradeMessageBody(alert, stringBuilder);
+            }
             return stringBuilder.ToString();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="alert"></param>
+        /// <param name="stringBuilder"></param>
+        /// <returns></returns>
+        private static void MakeIOMonitoringMessageBody(Alert alert, StringBuilder stringBuilder)
+        {
+            stringBuilder.Append("<style>table, th, td {border: 1px solid black;border-collapse: collapse;padding: 4px;}</style>");
+            stringBuilder.Append("<table>");
+            stringBuilder.Append("<tr>");
+            stringBuilder.AppendFormat("<th>Дата</th>");
+            stringBuilder.AppendFormat("<th>Клиент</th>");
+            stringBuilder.AppendFormat("<th>Торговый код</th>");
+            stringBuilder.AppendFormat("<th>Валюта счета</th>");
+            stringBuilder.AppendFormat("<th>Ввод</th>");
+            stringBuilder.AppendFormat("<th>Вывод</th>");
+            stringBuilder.AppendFormat("<th>Текущий капитал</th>");
+            stringBuilder.AppendFormat("<th>Входящий остаток</th>");
+            stringBuilder.Append("</tr>");
+            stringBuilder.Append("<tr>");
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.DateTime);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.Client);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.TradeCode);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.Currency);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.MoneyInDay);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.MoneyOutDay);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.Capital);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.OpenBalanceBackOffice);
+            stringBuilder.Append("</tr>");
+            stringBuilder.Append("</table>");
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="alert"></param>
+        /// <param name="stringBuilder"></param>
+        /// <returns></returns>
+        private static void MakeScalperTradeMessageBody(Alert alert, StringBuilder stringBuilder)
+        {
+            var scalperAll = 0;
+            var scalperToday = 0;
+            var scalperData = Server.Current.DataBase.LoadScalper(alert.Portfolio.TradeCode);
+            
+            if (scalperData != null)
+            {
+                var sclaperDataList = scalperData.ToList();
+                scalperAll = sclaperDataList.Count();
+                scalperToday = sclaperDataList.Count(s => s.UpdateDate.AddHours(3).Date == DateTime.Now.Date);
+            }
+
+            stringBuilder.Append("<style>table, th, td {border: 1px solid black;border-collapse: collapse;padding: 4px;}</style>");
+            stringBuilder.Append("<table>");
+            stringBuilder.Append("<tr>");
+            stringBuilder.AppendFormat("<th>Дата</th>");
+            stringBuilder.AppendFormat("<th>Клиент</th>");
+            stringBuilder.AppendFormat("<th>Торговый код</th>");
+            stringBuilder.AppendFormat("<th>Валюта счета</th>");
+            stringBuilder.AppendFormat("<th>Скальперских сделок сегодня</th>");
+            stringBuilder.AppendFormat("<th>Скальперских сделок всего</th>");
+            stringBuilder.Append("</tr>");
+            stringBuilder.Append("<tr>");
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.DateTime);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.Client);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.TradeCode);
+            stringBuilder.AppendFormat("<td>{0}</td>", alert.Portfolio.Currency);
+            stringBuilder.AppendFormat("<td>{0}</td>", scalperToday);
+            stringBuilder.AppendFormat("<td>{0}</td>", scalperAll);
+            stringBuilder.Append("</tr>");
+            stringBuilder.Append("</table>");
+
         }
     }
 }

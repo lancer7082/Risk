@@ -129,6 +129,38 @@ namespace Risk
         public int CheckingQuotesPeriod { get; set; }
 
         /// <summary>
+        /// Период проверки цен по инструментам
+        /// </summary>
+        public int CheckingScalperTradesPeriod { get; set; }
+
+        /// <summary>
+        /// Интервал определения скальперской сделки
+        /// </summary>
+        public int ScalperTradesDetectionInterval { get; set; }
+
+        public string ScalperTradesRecipients { get; set; }
+
+        /// <summary>
+        /// Период мониторинга внутредневных вводов/выводов, сек.
+        /// </summary>
+        public int IODailyMonitoringPeriod { get; set; }
+
+        /// <summary>
+        /// Пороговое значение капитала для отправки оповещения
+        /// </summary>
+        public int IODailyMonitoringCapitalThreshold { get; set; }
+
+        /// <summary>
+        /// Получатели оповещения
+        /// </summary>
+        public string IODailyMonitoringRecipients { get; set; }
+
+        /// <summary>
+        /// Время ожидания закрытия позиции МК
+        /// </summary>
+        public int MarginCallClosingPositionsInterval { get; set; }
+
+        /// <summary>
         /// Текущее время сервера
         /// </summary>
         public DateTime ServerTime
@@ -173,8 +205,15 @@ namespace Risk
             PlannedCapitalUtilization = 100;
             CheckingQuotesInstruments = "FB.O;GE;SBER.MM;SNGS.MM;TATN.MM";
             CheckingQuotesPeriod = 10;
+            CheckingScalperTradesPeriod = 30;
+            ScalperTradesDetectionInterval = 60;
+            ScalperTradesRecipients = "dssmirnov@corp.finam.ru";
             AutoMarginCallEnabled = false;
             MarginCallAlertInterval = 10;
+            IODailyMonitoringPeriod = 10;
+            IODailyMonitoringCapitalThreshold = 100000;
+            IODailyMonitoringRecipients = "dssmirnov@corp.finam.ru;moiseev_a@corp.finam.ru";
+            MarginCallClosingPositionsInterval = 120;
         }
     }
 }

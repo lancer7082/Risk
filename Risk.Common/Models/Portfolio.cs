@@ -202,6 +202,15 @@ namespace Risk
         /// </summary>
         public ClientGroup GroupId { get; set; }
 
+        /// <summary>
+        /// Входящий остаток (на момент начала сессии)
+        /// </summary>
+        public decimal OpenBalanceBackOffice { get; set; }
+
+        public int ScalperTradesAll { get; set; }
+
+        public int ScalperTradesToday { get; set; }
+
         #endregion
 
         /// <summary>
@@ -257,7 +266,10 @@ namespace Risk
                 GoCoeff = GoCoeff,
                 Retain = Retain,
                 MarginMin = MarginMin,
-                GroupId = GroupId
+                GroupId = GroupId,
+                OpenBalanceBackOffice = OpenBalanceBackOffice,
+                ScalperTradesAll = ScalperTradesAll,
+                ScalperTradesToday = ScalperTradesToday
             };
         }
     }

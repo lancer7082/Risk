@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>
-    <StartProgram>D:\Work\Projects\Risk\Test\Server\Bin\Debug\RMClient.exe</StartProgram>
+    <StartProgram>D:\Work\Projects\Risk\Test\Bin\Debug\RMClient.exe</StartProgram>
     <StartArguments>/D . /N test /P Test1</StartArguments>
   </PropertyGroup>
 </Project>
